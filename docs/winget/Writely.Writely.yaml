@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.default.1.8.0.schema.json
+PackageIdentifier: Writely.Writely
+PackageVersion: 1.1.0
+DefaultLocale: en-US
+ManifestType: defaultLocale
+ManifestVersion: 1.8.0
+Name: Writely
+Publisher: BalaBenna
+License: Apache-2.0
+ShortDescription: Open-Source Local-AI Grammarly Alternative (<50ms, 100% Offline)
+Description: Writely provides instant, 100% offline grammar, spelling, and tone rewriting powered by local AI models. No telemetry, no subscription.
+Moniker: writely
+Tags: [grammar, spelling, writing, offline, tauri, ai]
+Homepage: https://github.com/BalaBenna/Writely
+LicenseUrl: https://github.com/BalaBenna/Writely/blob/main/LICENSE
+Installers:
+  - Architecture: x64
+    InstallerType: nullsoft
+    InstallerUrl: https://github.com/BalaBenna/Writely/releases/download/v1.1.0/Writely_1.1.0_x64-setup.exe
+    InstallerSha256: REPLACE_WITH_SHA256_OF_EXE
+    ProductCode: Writely
+PackageUrl: https://github.com/BalaBenna/Writely/releases/tag/v1.1.0
