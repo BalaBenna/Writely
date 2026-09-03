@@ -70,16 +70,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           {/* Brand Logo */}
           <div className={`flex items-center ${collapsed ? '' : 'space-x-2.5'}`}>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-              <Feather className="w-4.5 h-4.5 text-white" />
+              <Feather className="w-5 h-5 text-white" strokeWidth={2.2} />
             </div>
             {!collapsed && (
-              <div>
-                <div className="font-bold text-sm text-slate-900 dark:text-white tracking-tight leading-none">
-                  Writely
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                  Open Proofreader
-                </span>
+              <div className="font-bold text-sm text-slate-900 dark:text-white tracking-tight leading-none">
+                Writely
               </div>
             )}
           </div>

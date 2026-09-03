@@ -1,6 +1,6 @@
 [package]
 name = "writely"
-version = "1.4.0"
+version = "1.4.1"
 description = "Open Source Local-AI Grammarly Alternative"
 authors = ["Writely Team <team@writely.ai>"]
 edition = "2021"

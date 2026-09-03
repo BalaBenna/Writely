@@ -58,7 +58,14 @@ body {
   box-shadow: var(--shadow-dropdown);
 }
 
-/* Custom Issue Wavy Underlines */
+/* Custom Issue Wavy Underlines — text must stay transparent (only underlines/background visible) */
+.issue-grammar,
+.issue-spelling,
+.issue-clarity,
+.issue-tone {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
 .issue-grammar {
   text-decoration: underline wavy #ef4444 2.5px;
   text-underline-offset: 4px;

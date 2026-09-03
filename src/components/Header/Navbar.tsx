@@ -41,9 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 LOCAL AI
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
-              Open-Source Grammarly Alternative
-            </p>
+
           </div>
         </div>
 

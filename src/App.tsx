@@ -135,8 +135,36 @@ export const App: React.FC = () => {
     runAnalysis(text);
   }, [runAnalysis]); // runs on mount and whenever goals change (runAnalysis identity changes)
 
-  // Accept a single suggestion
+  // Accept a single suggestion — clears debounce to prevent stale re-analysis
   const handleAcceptSuggestion = (s: Suggestion) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    // Guard: stale suggestion due to cache shift or typing — verify original matches current text
+    const currentSlice = text.substring(s.start, s.end);
+    if (currentSlice !== s.original) {
+      // Try to re-locate by searching near original position (handles shifted offsets)
+      const searchWindow = 40;
+      const searchStart = Math.max(0, s.start - searchWindow);
+      const searchEnd = Math.min(text.length, s.end + searchWindow);
+      const windowText = text.substring(searchStart, searchEnd);
+      const idx = windowText.indexOf(s.original);
+      if (idx !== -1) {
+        const newStart = searchStart + idx;
+        const newEnd = newStart + s.original.length;
+        const before2 = text.substring(0, newStart);
+        const after2 = text.substring(newEnd);
+        const updatedText2 = before2 + s.replacement + after2;
+        setText(updatedText2);
+        setActiveSuggestionId(null);
+        runAnalysis(updatedText2);
+        return;
+      }
+      // Fallback: re-analyze current text to refresh suggestions
+      runAnalysis(text);
+      return;
+    }
     const before = text.substring(0, s.start);
     const after = text.substring(s.end);
     const updatedText = before + s.replacement + after;
@@ -153,14 +181,27 @@ export const App: React.FC = () => {
     }
   };
 
-  // Accept all suggestions at once (Right-to-Left replacement to avoid offset drift)
+  // Accept all suggestions at once (Right-to-Left replacement to avoid offset drift) — clears debounce
   const handleFixAll = () => {
     if (suggestions.length === 0) return;
-
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     const sorted = [...suggestions].sort((a, b) => b.start - a.start);
     let currentText = text;
 
     for (const s of sorted) {
+      // Verify slice still matches before replacing (handles cache-shifted stale suggestions)
+      const slice = currentText.substring(s.start, s.end);
+      if (slice !== s.original) {
+        const idx = currentText.indexOf(s.original);
+        if (idx !== -1) {
+          currentText = currentText.substring(0, idx) + s.replacement + currentText.substring(idx + s.original.length);
+          continue;
+        }
+        continue; // skip stale
+      }
       const before = currentText.substring(0, s.start);
       const after = currentText.substring(s.end);
       currentText = before + s.replacement + after;
@@ -209,10 +250,10 @@ export const App: React.FC = () => {
               <div className="lg:col-span-8 flex flex-col min-h-[550px] space-y-4">
                 <GoalsBar goals={goals} onChange={setGoals} />
                 {telemetry.tone && (
-                  <div className="flex items-center gap-2 text-xs bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2">
                     <span className="text-base">{telemetry.tone.emoji}</span>
-                    <span className="text-slate-200 font-medium">{telemetry.tone.overall}</span>
-                    <span className="text-slate-500">— {telemetry.tone.description}</span>
+                    <span className="text-slate-900 dark:text-slate-200 font-medium">{telemetry.tone.overall}</span>
+                    <span className="text-slate-500 dark:text-slate-400">— {telemetry.tone.description}</span>
                     <span className="ml-auto text-[11px] text-slate-500">{telemetry.tone.scores.formal ?? 0}% formal • {telemetry.tone.scores.confident ?? 0}% confident</span>
                   </div>
                 )}

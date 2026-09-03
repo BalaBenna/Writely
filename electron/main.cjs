@@ -25,7 +25,7 @@ function createWindow() {
     height: 780,
     minWidth: 900,
     minHeight: 600,
-    title: 'Writely — Local AI Grammar Assistant',
+    title: 'Writely',
     backgroundColor: '#0f172a',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

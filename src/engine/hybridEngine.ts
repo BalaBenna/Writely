@@ -92,18 +92,16 @@ export function analyzeDocument(documentText: string, goals: WritingGoals = DEFA
   const allSuggestions: Suggestion[] = [];
   let allCacheHits = sentences.length > 0;
 
-  // Step 2: Sentence-by-sentence check with hash cache
+  // Step 2: Sentence-by-sentence check with hash cache (store relative offsets, replay with current sentence start)
   for (const s of sentences) {
     const cached = globalSentenceCache.get(s.text);
 
     if (cached) {
-      // Fast cache hit: adjust offsets if sentence position shifted
-      const offsetDiff = s.start;
       for (const item of cached) {
         allSuggestions.push({
           ...item,
-          start: item.start,
-          end: item.end,
+          start: item.start + s.start,
+          end: item.end + s.start,
           sentenceIndex: s.index,
         });
       }
@@ -134,8 +132,13 @@ export function analyzeDocument(documentText: string, goals: WritingGoals = DEFA
       // Combine suggestions for this sentence
       const sentenceSuggestions = [...spellSuggestions, ...grammarSuggestions, ...styleHits];
 
-      // Cache this sentence
-      globalSentenceCache.set(s.text, sentenceSuggestions);
+      // Cache with relative offsets (so replay works when sentence moves)
+      const relativeForCache = sentenceSuggestions.map(sug => ({
+        ...sug,
+        start: sug.start - s.start,
+        end: sug.end - s.start,
+      }));
+      globalSentenceCache.set(s.text, relativeForCache);
 
       allSuggestions.push(...sentenceSuggestions);
     }
