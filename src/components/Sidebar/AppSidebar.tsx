@@ -17,6 +17,7 @@ import {
   ScanEye,
   BarChart3,
   Palette,
+  HelpCircle,
 } from 'lucide-react';
 
 export type NavScreen = 'editor' | 'models' | 'dictionary' | 'history' | 'plagiarism' | 'citations' | 'detector' | 'analytics' | 'styleguide';
@@ -27,6 +28,7 @@ interface AppSidebarProps {
   onOpenDownload: () => void;
   onOpenSettings: () => void;
   onOpenRewrite: () => void;
+  onOpenOnboarding: () => void;
   isDark: boolean;
   toggleTheme: () => void;
 }
@@ -37,6 +39,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenDownload,
   onOpenSettings,
   onOpenRewrite,
+  onOpenOnboarding,
   isDark,
   toggleTheme,
 }) => {
@@ -156,6 +159,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         >
           <Settings className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Settings</span>}
+        </button>
+
+        <button
+          onClick={onOpenOnboarding}
+          title={collapsed ? 'Onboarding Tour' : undefined}
+          className={`w-full flex items-center ${collapsed ? 'justify-center' : 'space-x-2.5'} px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/5 transition-colors`}
+        >
+          <HelpCircle className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>Tour</span>}
         </button>
 
         <button

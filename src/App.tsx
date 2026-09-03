@@ -20,6 +20,7 @@ import { addToUserDictionary } from './engine/spell';
 import { Suggestion, DocumentMetrics, EngineTelemetry, WritingGoals, DEFAULT_GOALS } from './types';
 import { GoalsBar } from './components/Goals/GoalsBar';
 import { loadSnippets, expandSnippets } from './engine/styleGuide';
+import { OnboardingWizard, hasCompletedOnboarding } from './components/Onboarding/OnboardingWizard';
 
 const INITIAL_TEXT = `He go to the store yesterday and bought three apple . Their are many reasons why this is a bad idea , due to the fact that he don't have no money . We is hoping that you can fix this asap .
 
@@ -91,11 +92,19 @@ export const App: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Modals
+  // Modals + Onboarding
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [isModelsModalOpen, setIsModelsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRewriteOpen, setIsRewriteOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!hasCompletedOnboarding()) setIsOnboardingOpen(true);
+    }, 600);
+    return () => clearTimeout(t);
+  }, []);
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -184,6 +193,7 @@ export const App: React.FC = () => {
         onOpenDownload={() => setIsDownloadOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenRewrite={() => setIsRewriteOpen(true)}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
         isDark={isDark}
         toggleTheme={toggleTheme}
       />
@@ -315,6 +325,13 @@ export const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         debounceMs={debounceMs}
         setDebounceMs={setDebounceMs}
+      />
+
+      <OnboardingWizard
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onGoToModels={() => { setIsOnboardingOpen(false); setCurrentScreen('models'); }}
+        onGoToEditor={() => { setIsOnboardingOpen(false); setCurrentScreen('editor'); }}
       />
     </div>
   );

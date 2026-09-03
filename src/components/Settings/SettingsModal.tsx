@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Settings, Sliders, ShieldCheck, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, Settings, Sliders, ShieldCheck, Trash2, CheckCircle2, HelpCircle } from 'lucide-react';
 import { globalSentenceCache } from '../../engine/cache';
 
 interface SettingsModalProps {
@@ -151,6 +151,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {cacheCleared ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Trash2 className="w-3.5 h-3.5" />}
             <span>{cacheCleared ? 'Cleared' : 'Clear Cache'}</span>
           </button>
+        </div>
+
+        {/* Onboarding replay */}
+        <div className="mb-4 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <div><div className="text-xs font-semibold">Need a tour?</div><div className="text-[11px] text-slate-600 dark:text-slate-400">Mac vs Windows vs Web setup in 6 steps.</div></div>
+          </div>
+          <button onClick={() => { try { localStorage.removeItem('writely_onboarded_v2'); } catch {}; window.location.reload(); }} className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-xs font-medium hover:bg-slate-50 dark:hover:bg-white/5">Replay Onboarding</button>
         </div>
 
         {/* Privacy Note & Footer */}
