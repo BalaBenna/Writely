@@ -11,8 +11,8 @@ Every push of a version tag `v*` builds **both Electron and Tauri** installers i
 
 | Platform | Electron (recommended, familiar) | Tauri (lightweight) |
 |---|---|---|
-| **macOS 12+ Universal** | `Writely-1.2.0.dmg` (~85 MB, Electron) — `npm run dev:electron` | `Writely_*_universal.dmg` (~12.4 MB) — `npm run tauri dev` |
-| **Windows 10/11 64-bit** | `Writely Setup 1.2.0.exe` (Electron NSIS) | `Writely_*_x64-setup.exe` / `.msi` (Tauri NSIS) |
+| **macOS 12+ Universal** | `Writely-1.3.0.dmg` (~85 MB, Electron) — `npm run dev:electron` | `Writely_*_universal.dmg` (~12.4 MB) — `npm run tauri dev` |
+| **Windows 10/11 64-bit** | `Writely Setup 1.3.0.exe` (Electron NSIS) | `Writely_*_x64-setup.exe` / `.msi` (Tauri NSIS) |
 
 Install: Open DMG → drag to Applications → right-click Open (ad-hoc sign until Apple cert). Windows: More info → Run anyway on first unsigned build.
 
