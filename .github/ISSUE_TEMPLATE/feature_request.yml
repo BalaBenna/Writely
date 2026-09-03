@@ -1,0 +1,15 @@
+name: Feature Request
+description: Suggest an idea for Writely
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      placeholder: "Add Firefox extension / better Academic tone..."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would this help?

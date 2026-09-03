@@ -39,7 +39,7 @@ Keystroke
 Writely is packaged as a native, lightweight installer (~12.4 MB) for both **macOS** and **Windows**.
 
 ### macOS (Universal: Apple Silicon & Intel)
-* **Direct Download:** [Download `Writely-Universal.dmg`](https://github.com/writely/writely/releases/latest)
+* **Direct Download:** [Download `Writely-Universal.dmg`](https://github.com/BalaBenna/Writely/releases/latest)
 * **Homebrew Cask:**
   ```bash
   brew install --cask writely
@@ -47,7 +47,7 @@ Writely is packaged as a native, lightweight installer (~12.4 MB) for both **mac
 * **Hardware Acceleration:** Uses Apple Neural Engine (ANE) and Metal for 12–22ms inference.
 
 ### Windows (10 & 11 64-bit)
-* **Direct Download:** [Download `Writely-Setup-x64.exe`](https://github.com/writely/writely/releases/latest) (NSIS Installer)
+* **Direct Download:** [Download `Writely-Setup-x64.exe`](https://github.com/BalaBenna/Writely/releases/latest) (NSIS Installer)
 * **WinGet:**
   ```powershell
   winget install Writely.Writely
@@ -89,8 +89,8 @@ Models are downloaded once to `~/.writely/models/` and cached hot in RAM:
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/writely/writely.git
-cd writely
+git clone https://github.com/BalaBenna/Writely.git
+cd Writely
 npm install
 ```
 

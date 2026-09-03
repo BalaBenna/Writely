@@ -1,0 +1,28 @@
+name: Bug Report
+description: Report a bug in Writely
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      placeholder: "Typing 'he go' didn't correct to 'He goes'..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open editor\n2. Type...\n3. See error"
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Windows, Browser Extension, All]
+    validations:
+      required: true
+  - type: textarea
+    id: latency
+    attributes:
+      label: Latency (from HUD)
+      placeholder: "e.g. 23ms, cache hit/miss"
