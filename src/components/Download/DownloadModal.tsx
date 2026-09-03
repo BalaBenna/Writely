@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Download, Apple, Monitor, Terminal, Check, ExternalLink, ShieldCheck, Cpu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Download, Apple, Monitor, Terminal, Check, ExternalLink, ShieldCheck, Cpu, Loader2 } from 'lucide-react';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -10,13 +10,32 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
   const [copiedMac, setCopiedMac] = useState(false);
   const [copiedWin, setCopiedWin] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState<string | null>(null);
+  const [assets, setAssets] = useState<{ name: string; url: string; size: number }[] | null>(null);
+  const [assetsError, setAssetsError] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || assets !== null) return;
+    fetch('https://api.github.com/repos/BalaBenna/Writely/releases/latest', { headers: { Accept: 'application/vnd.github.v3+json' } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        const list = (data.assets || []).map((a: any) => ({ name: a.name, url: a.browser_download_url, size: a.size }));
+        setAssets(list);
+      })
+      .catch(() => setAssetsError(true));
+  }, [isOpen, assets]);
+
+  const macAsset = assets?.find(a => a.name.endsWith('.dmg')) || null;
+  const winAsset = assets?.find(a => a.name.endsWith('.exe') || a.name.endsWith('.msi')) || null;
 
   if (!isOpen) return null;
 
   const handleDownload = (os: 'mac' | 'win') => {
-    const base = 'https://github.com/BalaBenna/Writely/releases/latest';
-    // Open releases page; when assets exist browser offers direct .dmg/.exe
-    window.open(base, '_blank', 'noopener,noreferrer');
+    const asset = os === 'mac' ? macAsset : winAsset;
+    if (asset?.url) {
+      window.open(asset.url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open('https://github.com/BalaBenna/Writely/releases/latest', '_blank', 'noopener,noreferrer');
+    }
     setDownloadStarted(os);
     setTimeout(() => setDownloadStarted(null), 3500);
   };
@@ -66,7 +85,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
             <div className="flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>
-                Preparing <strong>Writely v1.0.0 ({downloadStarted === 'mac' ? 'macOS Universal .DMG' : 'Windows Setup .EXE'})</strong> package...
+                Preparing <strong>Writely ({downloadStarted === 'mac' ? 'macOS Universal .DMG' : 'Windows Setup .EXE'})</strong> — fetching latest release…
               </span>
             </div>
             <span className="font-mono text-[10px] bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded font-bold">
@@ -119,11 +138,13 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
 
             <button
               onClick={() => handleDownload('mac')}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 transition-all"
+              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-60"
             >
               <Download className="w-4 h-4" />
-              <span>Download for Mac (.dmg)</span>
+              <span>{macAsset ? `Download ${macAsset.name}` : 'Download for Mac (.dmg)'}</span>
             </button>
+            {assets === null && !assetsError && <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-2"><Loader2 className="w-3 h-3 animate-spin" />Fetching latest release…</div>}
+            {assetsError && <div className="text-[11px] text-slate-500 mt-2">Direct asset not yet published — use Releases page below.</div>}
           </div>
 
           {/* Windows Card */}
@@ -171,7 +192,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
               className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold text-xs transition-all"
             >
               <Download className="w-4 h-4 text-sky-400" />
-              <span>Download for Windows (.exe)</span>
+              <span>{winAsset ? `Download ${winAsset.name}` : 'Download for Windows (.exe)'}</span>
             </button>
           </div>
         </div>
@@ -202,17 +223,25 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
           </div>
         </div>
 
-        {/* Direct release asset links */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-[11px]">
-          <a href="https://github.com/BalaBenna/Writely/releases/latest/download/Writely_1.0.0_universal.dmg" target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-white dark:bg-slate-900/50">
-            <span className="font-mono text-slate-700 dark:text-slate-300">Writely_…_universal.dmg</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </a>
-          <a href="https://github.com/BalaBenna/Writely/releases/latest/download/Writely_1.0.0_x64-setup.exe" target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-sky-400 dark:hover:border-sky-500/40 bg-white dark:bg-slate-900/50">
-            <span className="font-mono text-slate-700 dark:text-slate-300">Writely_…_x64-setup.exe</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </a>
-        </div>
+        {/* Direct release asset links (dynamic) */}
+        {assets && assets.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-[11px]">
+            {assets.slice(0, 4).map(a => (
+              <a key={a.name} href={a.url} target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-white dark:bg-slate-900/50">
+                <span className="font-mono text-slate-700 dark:text-slate-300 truncate pr-2">{a.name}</span>
+                <span className="text-slate-400 shrink-0">{(a.size / 1024 / 1024).toFixed(1)} MB</span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-[11px]">
+            <a href="https://github.com/BalaBenna/Writely/releases/latest" target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-white dark:bg-slate-900/50">
+              <span className="font-mono text-slate-700 dark:text-slate-300">Releases — latest</span>
+              <ExternalLink className="w-3 h-3 text-slate-400" />
+            </a>
+            <div className="p-2 rounded-lg border border-dashed border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400">No assets yet — tag v* to build</div>
+          </div>
+        )}
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Web demo (no install): <a href="https://balabenna.github.io/Writely/" target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">balabenna.github.io/Writely</a> • PWA works offline after first load.</p>
 
         {/* Browser Extension Note */}

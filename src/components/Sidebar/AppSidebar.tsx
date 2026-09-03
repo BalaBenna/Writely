@@ -58,10 +58,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     <aside
       className={`${
         collapsed ? 'w-16' : 'w-56'
-      } shrink-0 flex flex-col justify-between p-3.5 bg-slate-50/95 dark:bg-slate-950/80 border-r border-slate-200 dark:border-white/5 select-none transition-all duration-200 ease-in-out`}
+      } shrink-0 flex flex-col p-3.5 bg-slate-50/95 dark:bg-slate-950/80 border-r border-slate-200 dark:border-white/5 select-none transition-all duration-200 ease-in-out overflow-hidden`}
     >
-      {/* Top Section */}
-      <div className="space-y-5">
+      {/* Top Section - scrollable */}
+      <div className="flex-1 flex flex-col space-y-5 min-h-0 overflow-hidden">
         {/* Brand + Collapse Toggle */}
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-1 pt-1`}>
           {/* Brand Logo */}
@@ -106,8 +106,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
         )}
 
-        {/* Primary Navigation */}
-        <nav className="space-y-1">
+        {/* Primary Navigation - scrollable */}
+        <nav className="space-y-1 overflow-y-auto overflow-x-hidden flex-1 min-h-0 pr-1 -mr-1 scrollbar-thin">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentScreen === item.id;
@@ -147,9 +147,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           </button>
         </nav>
       </div>
-
-      {/* Bottom Actions */}
-      <div className="space-y-1 pt-4 border-t border-slate-200 dark:border-white/5">
+      {/* Bottom Actions - pinned */}
+      <div className="space-y-1 pt-4 border-t border-slate-200 dark:border-white/5 shrink-0">
         <button
           onClick={onOpenSettings}
           title={collapsed ? 'Settings' : undefined}

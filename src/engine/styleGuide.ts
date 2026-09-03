@@ -16,6 +16,7 @@ const LS_SNIPPETS = 'writely_snippets';
 
 export function loadStyleGuide(): StyleRule[] {
   try {
+    if (typeof localStorage === 'undefined') throw new Error('no storage');
     const raw = localStorage.getItem(LS_STYLE);
     if (raw) return JSON.parse(raw);
   } catch {}
@@ -26,11 +27,15 @@ export function loadStyleGuide(): StyleRule[] {
 }
 
 export function saveStyleGuide(rules: StyleRule[]) {
-  localStorage.setItem(LS_STYLE, JSON.stringify(rules));
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(LS_STYLE, JSON.stringify(rules));
+  } catch {}
 }
 
 export function loadSnippets(): Snippet[] {
   try {
+    if (typeof localStorage === 'undefined') throw new Error('no storage');
     const raw = localStorage.getItem(LS_SNIPPETS);
     if (raw) return JSON.parse(raw);
   } catch {}
@@ -41,7 +46,10 @@ export function loadSnippets(): Snippet[] {
 }
 
 export function saveSnippets(snippets: Snippet[]) {
-  localStorage.setItem(LS_SNIPPETS, JSON.stringify(snippets));
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(LS_SNIPPETS, JSON.stringify(snippets));
+  } catch {}
 }
 
 export function checkStyleGuide(text: string, rules: StyleRule[]): { start: number; end: number; term: string; suggestion: string }[] {
