@@ -14,6 +14,9 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
   if (!isOpen) return null;
 
   const handleDownload = (os: 'mac' | 'win') => {
+    const base = 'https://github.com/BalaBenna/Writely/releases/latest';
+    // Open releases page; when assets exist browser offers direct .dmg/.exe
+    window.open(base, '_blank', 'noopener,noreferrer');
     setDownloadStarted(os);
     setTimeout(() => setDownloadStarted(null), 3500);
   };
@@ -199,6 +202,19 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
           </div>
         </div>
 
+        {/* Direct release asset links */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-[11px]">
+          <a href="https://github.com/BalaBenna/Writely/releases/latest/download/Writely_1.0.0_universal.dmg" target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-white dark:bg-slate-900/50">
+            <span className="font-mono text-slate-700 dark:text-slate-300">Writely_…_universal.dmg</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" />
+          </a>
+          <a href="https://github.com/BalaBenna/Writely/releases/latest/download/Writely_1.0.0_x64-setup.exe" target="_blank" rel="noreferrer" className="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-sky-400 dark:hover:border-sky-500/40 bg-white dark:bg-slate-900/50">
+            <span className="font-mono text-slate-700 dark:text-slate-300">Writely_…_x64-setup.exe</span>
+            <ExternalLink className="w-3 h-3 text-slate-400" />
+          </a>
+        </div>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Web demo (no install): <a href="https://balabenna.github.io/Writely/" target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">balabenna.github.io/Writely</a> • PWA works offline after first load.</p>
+
         {/* Browser Extension Note */}
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
           <div className="flex items-center space-x-1.5">
@@ -206,7 +222,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
           </div>
 
           <a
-            href="https://github.com/writely/writely/releases"
+            href="https://github.com/BalaBenna/Writely/releases"
             target="_blank"
             rel="noreferrer"
             className="flex items-center space-x-1 text-indigo-600 dark:text-indigo-400 hover:underline font-medium"

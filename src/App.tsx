@@ -10,10 +10,16 @@ import { RewriteModal } from './components/Rewrite/RewriteModal';
 import { ModelManagerModal } from './components/Models/ModelManagerModal';
 import { DownloadModal } from './components/Download/DownloadModal';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { PlagiarismPanel } from './components/Plagiarism/PlagiarismPanel';
+import { CitationsPanel } from './components/Citations/CitationsPanel';
+import { DetectorPanel } from './components/Detector/DetectorPanel';
+import { AnalyticsPanel } from './components/Analytics/AnalyticsPanel';
+import { StyleGuidePanel } from './components/StyleGuide/StyleGuidePanel';
 import { analyzeDocument } from './engine/hybridEngine';
 import { addToUserDictionary } from './engine/spell';
 import { Suggestion, DocumentMetrics, EngineTelemetry, WritingGoals, DEFAULT_GOALS } from './types';
 import { GoalsBar } from './components/Goals/GoalsBar';
+import { loadSnippets, expandSnippets } from './engine/styleGuide';
 
 const INITIAL_TEXT = `He go to the store yesterday and bought three apple . Their are many reasons why this is a bad idea , due to the fact that he don't have no money . We is hoping that you can fix this asap .
 
@@ -101,14 +107,17 @@ export const App: React.FC = () => {
     setTelemetry(result.telemetry);
   }, [goals]);
 
-  // Debounced input handler (<80ms)
+  // Debounced input handler (<80ms) — also expands /snippets
   const handleTextChange = (newText: string) => {
-    setText(newText);
+    const snippets = loadSnippets();
+    const expanded = expandSnippets(newText, snippets);
+    const finalText = expanded !== newText ? expanded : newText;
+    setText(finalText);
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = setTimeout(() => {
-      runAnalysis(newText);
+      runAnalysis(finalText);
     }, debounceMs);
   };
 
@@ -248,6 +257,36 @@ export const App: React.FC = () => {
                   setCurrentScreen('editor');
                 }}
               />
+            </div>
+          )}
+
+          {currentScreen === 'plagiarism' && (
+            <div className="max-w-3xl mx-auto">
+              <PlagiarismPanel currentText={text} corpus={(() => { try { return JSON.parse(localStorage.getItem('writely_saved_drafts') || '[]').map((d: any) => ({ id: d.id, title: d.title, content: d.content })); } catch { return []; } })()} />
+            </div>
+          )}
+
+          {currentScreen === 'citations' && (
+            <div className="max-w-3xl mx-auto">
+              <CitationsPanel />
+            </div>
+          )}
+
+          {currentScreen === 'detector' && (
+            <div className="max-w-3xl mx-auto">
+              <DetectorPanel text={text} onApplyHumanized={(t) => { setText(t); runAnalysis(t); setCurrentScreen('editor'); }} />
+            </div>
+          )}
+
+          {currentScreen === 'analytics' && (
+            <div className="max-w-3xl mx-auto">
+              <AnalyticsPanel text={text} suggestionCount={suggestions.length} />
+            </div>
+          )}
+
+          {currentScreen === 'styleguide' && (
+            <div className="max-w-3xl mx-auto">
+              <StyleGuidePanel />
             </div>
           )}
         </div>

@@ -36,36 +36,43 @@ Keystroke
 
 ## 🚀 Download & Installation
 
-Writely is packaged as a native, lightweight installer (~12.4 MB) for both **macOS** and **Windows**.
+Writely ships 3 ways: **Desktop** (Tauri ~12.4 MB) + **Web** (PWA) + **Browser Extension**. All 100% offline.
 
-### macOS (Universal: Apple Silicon & Intel)
-* **Direct Download:** [Download `Writely-Universal.dmg`](https://github.com/BalaBenna/Writely/releases/latest)
-* **Homebrew Cask:**
-  ```bash
-  brew install --cask writely
-  ```
-* **Hardware Acceleration:** Uses Apple Neural Engine (ANE) and Metal for 12–22ms inference.
+### Where to download (regular releases)
 
-### Windows (10 & 11 64-bit)
-* **Direct Download:** [Download `Writely-Setup-x64.exe`](https://github.com/BalaBenna/Writely/releases/latest) (NSIS Installer)
-* **WinGet:**
-  ```powershell
-  winget install Writely.Writely
-  ```
-* **Hardware Acceleration:** Uses ONNX Runtime with DirectML, Vulkan, and Intel NPU.
+Every `git tag v*` auto-builds installers via GitHub Actions (`.github/workflows/release.yml:1`) and attaches them to **GitHub Releases**.
+
+* **Releases page (all versions):** https://github.com/BalaBenna/Writely/releases
+* **Latest (always fresh):** https://github.com/BalaBenna/Writely/releases/latest
+* **In-app:** Download button (top bar → Download) links to latest release assets.
+* **Install docs:** see `docs/INSTALL.md` for notarization / SmartScreen notes.
+
+| Platform | File on Releases | Install |
+|---|---|---|
+| **macOS 12+ Universal (M1–M4 + Intel)** | `Writely_*_universal.dmg` | Open DMG → drag to Applications → right-click Open (ad-hoc signed; Apple cert planned → gatekeeper-free) |
+| **Windows 10/11 64-bit** | `Writely_*_x64-setup.exe` (+ `.msi`) | Double-click → Next. SmartScreen “More info → Run anyway” on first unsigned build |
+| **Web (no install)** | — | **https://balabenna.github.io/Writely/** — full editor, PWA caches offline after first load (Pages workflow `pages.yml:1`) |
+
+* **Homebrew Cask:** `brew install --cask writely` *(formula PR pending — points to Releases `.dmg` + sha256; until merged use DMG)*
+* **WinGet:** `winget install Writely.Writely` *(winget-pkgs PR pending; until merged use `.exe`)*
+* **Hardware Acceleration:** macOS ANE + Metal (12–22ms), Windows DirectML / Vulkan / Intel NPU; local models in `~/.writely/models/`.
 
 ---
 
-## 🧩 Features
+## 🧩 Features (Parity with Grammarly — Offline)
 
-- **Inline Realtime Highlights:** Color-coded wavy underlines for Grammar (Red), Spelling (Amber), Clarity (Purple), and Tone (Emerald).
-- **Floating Suggestion Card:** Instant visual diff (`- original` `+ replacement`), grammatical explanation, and keyboard shortcut (`Cmd/Ctrl+Enter` to accept, `Esc` to dismiss).
-- **Fix All in 1-Click:** Safe right-to-left multi-edit application.
-- **AI Tone & Paraphrase Studio:** Rewrite any paragraph in **Professional**, **Friendly**, **Concise**, **Academic**, or **Casual** voice with sub-120ms local streaming.
-- **Performance Telemetry HUD:** Realtime ms counter displaying tokenization, engine, and cache hit metrics on every keystroke.
-- **Document Health & Readability:** Live Flesch-Kincaid Reading Ease index, Grade Level, Clarity rating, word count, and reading time.
-- **Browser Extension (Chrome / Edge / Brave):** Connects to the desktop app via `ws://127.0.0.1:8765` to check Gmail, Notion, Slack, and Google Docs with zero telemetry.
-- **Personal Offline Dictionary:** One-click "Add to Dictionary" for custom terms and technical jargon.
+- **Goals:** Audience × Formality × Domain (General/Academic/Business/Email/Casual/Creative) × Intent — `src/components/Goals/GoalsBar.tsx:1` tailors rules (Academic flags contractions, Casual ignores fragments).
+- **Inline Realtime Highlights:** Wavy underlines per type (Grammar Red `grammar.ts:12`, Spelling Amber `spell.ts:1`, Clarity Purple, Tone Emerald) + **inline desktop + extension** (`extensions/chrome/content.js:1` shadow marks for Gmail/Notion, popup Fix-All for textarea).
+- **Suggestion Card:** Word-level diff + Why explanation + `Cmd+Enter`/`Esc`, Add to Dictionary.
+- **Fix All, Counters, Analytics:** Words/chars (with/without spaces)/paragraphs/sentences/avg w/s/longest sentence warning + personal analytics (no tracking) `src/components/Analytics/AnalyticsPanel.tsx:1`.
+- **Tone Detector & Studio:** Overall tone radar (formal/neutral/informal/confident/friendly + emoji) `src/engine/toneDetector.ts:1` + 5-voice rewrite (Professional/Friendly/Concise/Academic/Casual).
+- **Plagiarism — Local Self-Check:** n-gram Jaccard vs saved drafts/history (100% offline) `src/engine/plagiarism.ts:1` + `PlagiarismPanel`; for web-scale (16B) opt-in cloud via Copyscape/Crossref.
+- **Citations:** APA/MLA/Chicago formatter + in-text `src/engine/citations.ts:1` + Crossref lookup (opt-in) + copy.
+- **AI Detector + Humanizer:** Heuristic burstiness/perplexity detector `src/engine/detector.ts:1` (<30ms offline) + one-click humanize (contractions, burst).
+- **Style Guide & Snippets:** Local JSON brand rules (e.g. Writely not writely, Oxford comma) + `/trigger` expansion `src/engine/styleGuide.ts:1`, import/export for team via git.
+- **Document Health:** Flesch-Kincaid, Grade, Clarity, reading time, density.
+- **Dictionary & History:** Personal dict CRUD + saved drafts.
+- **Models:** BYOK cloud (OpenAI/Groq/Anthropic/Gemini/Ollama) + local catalog placeholders.
 
 ---
 

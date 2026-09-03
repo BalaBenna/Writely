@@ -5,6 +5,7 @@ import { checkGrammar } from './grammar';
 import { globalSentenceCache } from './cache';
 import { modelManager } from './localModel';
 import { analyzeTone } from './toneDetector';
+import { loadStyleGuide, checkStyleGuide } from './styleGuide';
 
 // Initialize user dictionary on startup
 loadUserDictionary();
@@ -115,8 +116,23 @@ export function analyzeDocument(documentText: string, goals: WritingGoals = DEFA
       // Tier 2: Non-autoregressive Grammar Tagger (<15ms) — goals-aware
       const grammarSuggestions = checkGrammar(s.text, s.start, s.index, goals);
 
+      // Tier 2b: Style Guide (brand terms) — offline, local JSON
+      const styleGuideRules = loadStyleGuide();
+      const styleHits = checkStyleGuide(s.text, styleGuideRules).map(h => ({
+        id: `style-${s.start + h.start}-${s.start + h.end}`,
+        type: 'tone' as const,
+        original: s.text.slice(h.start, h.end),
+        replacement: h.suggestion,
+        explanation: `Style guide: prefer "${h.suggestion}" over "${h.term}"`,
+        start: s.start + h.start,
+        end: s.start + h.end,
+        sentenceIndex: s.index,
+        ruleId: `STYLE_${h.term}`,
+        confidence: 0.92,
+      }));
+
       // Combine suggestions for this sentence
-      const sentenceSuggestions = [...spellSuggestions, ...grammarSuggestions];
+      const sentenceSuggestions = [...spellSuggestions, ...grammarSuggestions, ...styleHits];
 
       // Cache this sentence
       globalSentenceCache.set(s.text, sentenceSuggestions);

@@ -12,9 +12,14 @@ import {
   PanelLeftOpen,
   Sun,
   Moon,
+  ShieldAlert,
+  BookMarked,
+  ScanEye,
+  BarChart3,
+  Palette,
 } from 'lucide-react';
 
-export type NavScreen = 'editor' | 'models' | 'dictionary' | 'history';
+export type NavScreen = 'editor' | 'models' | 'dictionary' | 'history' | 'plagiarism' | 'citations' | 'detector' | 'analytics' | 'styleguide';
 
 interface AppSidebarProps {
   currentScreen: NavScreen;
@@ -42,6 +47,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     { id: 'models' as NavScreen, label: 'AI Models', icon: Cpu, badge: 'Catalog' },
     { id: 'dictionary' as NavScreen, label: 'Dictionary', icon: BookA },
     { id: 'history' as NavScreen, label: 'History', icon: History },
+    { id: 'plagiarism' as NavScreen, label: 'Plagiarism', icon: ShieldAlert },
+    { id: 'citations' as NavScreen, label: 'Citations', icon: BookMarked },
+    { id: 'detector' as NavScreen, label: 'AI Detector', icon: ScanEye },
+    { id: 'analytics' as NavScreen, label: 'Analytics', icon: BarChart3 },
+    { id: 'styleguide' as NavScreen, label: 'Style Guide', icon: Palette },
   ];
 
   return (
