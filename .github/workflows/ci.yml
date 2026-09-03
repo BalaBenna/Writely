@@ -1,0 +1,30 @@
+name: CI & Realtime Latency Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  benchmark:
+    name: Latency Gate (<50ms Realtime, <150ms SLA)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run TypeScript & Lint Check
+        run: npx tsc --noEmit
+
+      - name: Run Latency Benchmark Suite (<50ms SLA Gate)
+        run: npm run bench

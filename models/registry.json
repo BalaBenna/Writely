@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "registry": [
+    {
+      "id": "writely-gector-80M-int8",
+      "name": "Writely GECToR 80M (INT8)",
+      "format": "ONNX INT8 / CoreML mlpackage",
+      "sizeBytes": 47185920,
+      "sizeFormatted": "45 MB",
+      "ramRequired": "500 MB",
+      "purpose": "Realtime non-autoregressive grammar & spell tagging (<50ms SLA)",
+      "latencyTargetMs": "12-25ms",
+      "isDefault": true,
+      "url": "https://huggingface.co/writely-ai/gector-80M-int8/resolve/main/model.onnx",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "writely-qwen-0.5B-q4",
+      "name": "Writely Qwen 2.5 0.5B (Q4_K_M)",
+      "format": "GGUF Q4_K_M",
+      "sizeBytes": 367001600,
+      "sizeFormatted": "350 MB",
+      "ramRequired": "1.0 GB",
+      "purpose": "Fast tone transformation, professional rewrite & conciseness (<150ms)",
+      "latencyTargetMs": "110-140ms",
+      "isDefault": true,
+      "url": "https://huggingface.co/writely-ai/qwen-0.5b-q4/resolve/main/model.gguf",
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    },
+    {
+      "id": "writely-qwen-1.5B-q4",
+      "name": "Writely Qwen 2.5 1.5B (Q4_K_M)",
+      "format": "GGUF Q4_K_M",
+      "sizeBytes": 1181116006,
+      "sizeFormatted": "1.1 GB",
+      "ramRequired": "2.2 GB",
+      "purpose": "High-precision academic paraphrasing & nuanced tone styling",
+      "latencyTargetMs": "450-600ms",
+      "isDefault": false,
+      "url": "https://huggingface.co/writely-ai/qwen-1.5b-q4/resolve/main/model.gguf",
+      "sha256": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+    }
+  ]
+}

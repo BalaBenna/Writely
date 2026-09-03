@@ -1,0 +1,26 @@
+[package]
+name = "writely"
+version = "1.0.0"
+description = "Open Source Local-AI Grammarly Alternative"
+authors = ["Writely Team <team@writely.ai>"]
+edition = "2021"
+
+[features]
+default = []
+mac = []
+windows = []
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = ["tray-icon"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.36", features = ["full"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS native accelerators (Metal & CoreML)
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# Windows native accelerators (DirectML & Vulkan)

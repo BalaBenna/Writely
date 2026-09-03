@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Writely — Local-AI Grammar & Spell Checker",
+  "version": "1.0.0",
+  "description": "100% Offline & Private AI Writing Assistant for Chrome, Edge, and Brave with sub-50ms realtime latency.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*",
+    "ws://127.0.0.1:8765/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Writely Local AI Status"
+  }
+}

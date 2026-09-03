@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+*.log
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# Models (large, downloaded separately)
+models/*.bin
+models/*.onnx
+models/*.gguf
+~/.writely/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Bench results
+bench/results/
+
+# Temp
+*.tmp
+.opencode/

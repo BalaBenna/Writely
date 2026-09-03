@@ -1,0 +1,46 @@
+#writely-floating-badge {
+  position: absolute;
+  z-index: 999999;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+#writely-floating-badge:hover {
+  transform: scale(1.1);
+}
+
+.writely-badge-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 1.5px solid #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  position: relative;
+}
+
+.writely-badge-icon {
+  font-size: 13px;
+}
+
+.writely-badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  border-radius: 9px;
+  padding: 1px 4px;
+  line-height: 1;
+}
+
+#writely-floating-badge.has-issues .writely-badge-inner {
+  border-color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
