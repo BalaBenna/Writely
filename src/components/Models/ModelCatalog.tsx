@@ -20,6 +20,7 @@ import {
 import { ModelInfo, CloudModelInfo, CustomEndpointConfig, CloudProviderId } from '../../types';
 import { modelManager } from '../../engine/localModel';
 import { cloudManager } from '../../engine/cloudProviders';
+import { detectSystemInfo, getRecommendedModelId, compatibilityForModel, SystemInfo } from '../../utils/systemInfo';
 
 interface ModelCatalogProps {
   onOpenSettings?: () => void;
@@ -33,6 +34,17 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
   const [activeLocalModelId, setActiveLocalModelId] = useState<string>(
     modelManager.getActiveModel().id
   );
+
+  // System info for smart recommendations
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [recommendedId, setRecommendedId] = useState<string | null>(null);
+  useEffect(() => {
+    detectSystemInfo().then(sys => {
+      setSystemInfo(sys);
+      const rec = getRecommendedModelId(sys, localModels.map(m => m.id));
+      setRecommendedId(rec);
+    });
+  }, []);
 
   // Cloud state
   const [cloudModels, setCloudModels] = useState<CloudModelInfo[]>(cloudManager.getCloudModels());
@@ -68,6 +80,24 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
   }, []);
 
   const handleDownload = (id: string) => {
+    const model = localModels.find(m => m.id === id);
+    if (model && systemInfo) {
+      const compat = compatibilityForModel(systemInfo, model.ramRequired);
+      if (compat.level === 'bad') {
+        const ok = window.confirm(`⚠️ ${compat.reason}\n\n"${model.name}" needs ${model.ramRequired} RAM but your system has ~${systemInfo.ramGB ?? systemInfo.deviceMemoryGB ?? '?'} GB.\nIt may be slow or fail to load.\n\nDownload anyway?`);
+        if (!ok) return;
+      } else if (compat.level === 'warn') {
+        // soft warn via confirm only for bad; warn just proceeds
+      }
+      // Disk check
+      if (systemInfo.diskFreeGB !== null) {
+        const needGB = parseFloat(model.size) * (model.size.includes('MB') ? 1/1024 : 1);
+        if (systemInfo.diskFreeGB < needGB + 0.5) {
+          const ok2 = window.confirm(`Low disk space: ${systemInfo.diskFreeGB} GB free, need ~${model.size}.\nContinue?`);
+          if (!ok2) return;
+        }
+      }
+    }
     modelManager.downloadModel(id);
   };
 
@@ -193,10 +223,79 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
         {/* TAB 1: LOCAL MODELS */}
         {tab === 'local' && (
           <div className="space-y-3.5 max-w-5xl">
+            {/* System-aware header — shows detected hardware + recommendation */}
+            {systemInfo ? (
+              <div className="p-4 rounded-2xl border bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-slate-900 dark:to-slate-900 border-indigo-200 dark:border-white/10">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      Your system — auto-detected
+                      {systemInfo.isElectron && <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-900 text-white dark:bg-white dark:text-slate-900">Electron</span>}
+                    </h3>
+                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10">
+                        <div className="text-[11px] text-slate-500">Platform</div>
+                        <div className="font-semibold capitalize flex items-center gap-1">{systemInfo.platform} {systemInfo.isAppleSilicon ? '• Apple Silicon' : ''}</div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10">
+                        <div className="text-[11px] text-slate-500">RAM</div>
+                        <div className="font-semibold font-mono">{systemInfo.ramGB ?? systemInfo.deviceMemoryGB ?? '—'} GB {systemInfo.ramGB === null && systemInfo.deviceMemoryGB === null && <span className="text-[11px] font-normal text-amber-600">(unknown)</span>}</div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10">
+                        <div className="text-[11px] text-slate-500">CPU cores</div>
+                        <div className="font-semibold font-mono">{systemInfo.cpuCores ?? '—'}</div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10">
+                        <div className="text-[11px] text-slate-500">Disk free</div>
+                        <div className="font-semibold font-mono">{systemInfo.diskFreeGB !== null ? `${systemInfo.diskFreeGB} GB` : systemInfo.diskQuotaGB !== null ? `~${systemInfo.diskQuotaGB} GB quota` : '—'}</div>
+                      </div>
+                    </div>
+                    {systemInfo.gpuHint && <div className="mt-2 text-[11px] text-slate-500 truncate">GPU: {systemInfo.gpuHint}</div>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-[11px] text-slate-500">Recommended for you</div>
+                    <div className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold shadow">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {localModels.find(m => m.id === recommendedId)?.name || '—'}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      {(() => {
+                        const rec = localModels.find(m => m.id === recommendedId);
+                        return rec ? `${rec.size} • ${rec.ramRequired} RAM` : '';
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 p-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 text-xs">
+                  <div className="font-semibold mb-1">How to choose — Fast / Balanced / Quality</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-relaxed text-slate-600 dark:text-slate-400">
+                    <div><strong className="text-slate-900 dark:text-white">Fast 3B/4B ~2–3 GB</strong><br />MacBook Air 8GB, Intel Mac, old Win — continuous grammar as you type.</div>
+                    <div><strong className="text-slate-900 dark:text-white">Balanced 8B ~5 GB</strong> (default)<br />16GB RAM class — grammar + rewriting, multilingual.</div>
+                    <div><strong className="text-slate-900 dark:text-white">Quality 14B ~8–10 GB</strong><br />16GB+ — best rewriting, longer context. Needs RAM.</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 text-xs flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-slate-400" />
+                Detecting your system (RAM, CPU, disk) to recommend the best model…
+              </div>
+            )}
+
+            {/* Tier headers */}
+            <div className="flex items-center gap-2 pt-2">
+              <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+              <span className="text-[11px] tracking-widest font-semibold text-slate-500">CHOOSE YOUR AI QUALITY — DOWNLOAD ONCE, RUN OFFLINE</span>
+              <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+            </div>
+
             {localModels.map((model) => {
               const isDownloaded = model.status === 'ready';
               const isDownloading = model.status === 'downloading';
               const isActive = activeLocalModelId === model.id;
+              const isRecommended = recommendedId === model.id;
+              const compat = systemInfo ? compatibilityForModel(systemInfo, model.ramRequired) : { level: 'good' as const, reason: '' };
 
               return (
                 <div
@@ -204,6 +303,8 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
                   className={`p-5 rounded-2xl border transition-all ${
                     isActive
                       ? 'bg-indigo-50/70 border-indigo-500 shadow-sm dark:bg-slate-900/90 dark:border-indigo-500/60 dark:ring-1 dark:ring-indigo-500/30'
+                      : isRecommended
+                      ? 'bg-amber-50/40 border-amber-400 dark:bg-slate-900/60 dark:border-amber-500/40 dark:ring-1 dark:ring-amber-500/20 hover:border-amber-500'
                       : 'bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-900/50 border-slate-200 dark:border-white/5 dark:hover:border-white/15'
                   }`}
                 >
@@ -222,6 +323,16 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
                         {isActive && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
                             Current Engine
+                          </span>
+                        )}
+                        {isRecommended && !isActive && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+                            ★ Recommended for your system
+                          </span>
+                        )}
+                        {systemInfo && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${compat.level === 'good' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20' : compat.level === 'warn' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20' : 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20'}`} title={compat.reason}>
+                            {compat.level === 'good' ? '✓ Compatible' : compat.level === 'warn' ? '⚠ Tight' : '✗ Needs more RAM'}
                           </span>
                         )}
                       </div>
@@ -264,6 +375,14 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
                         <p className="text-xs text-slate-600 dark:text-slate-400 pt-1 leading-relaxed">
                           {model.description}
                         </p>
+                      )}
+                      {systemInfo && compat.level !== 'good' && (
+                        <p className={`text-[11px] mt-1 ${compat.level === 'bad' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                          {compat.reason} • Will download to <code className="font-mono px-1 py-0.5 rounded bg-slate-100 dark:bg-white/5">{`~/.writely/models/${model.id}/model.gguf`}</code> via GGUF + llama.cpp — user manages download once.
+                        </p>
+                      )}
+                      {systemInfo && compat.level === 'good' && model.size.includes('GB') && (
+                        <p className="text-[11px] mt-1 text-slate-500">Stored in <code className="font-mono px-1 py-0.5 rounded bg-slate-100 dark:bg-white/5">{`~/.writely/models/${model.id}/`}</code> — GGUF quantized, no API key.</p>
                       )}
                     </div>
 
