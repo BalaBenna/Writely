@@ -66,6 +66,28 @@ const COMMON_TYPOS: Record<string, string> = {
   'whith': 'with',
   'writen': 'written',
   'writting': 'writing',
+  // Contraction typos (no apostrophe)
+  'dont': "don't",
+  'doesnt': "doesn't",
+  'didnt': "didn't",
+  'cant': "can't",
+  'wont': "won't",
+  'shouldnt': "shouldn't",
+  'couldnt': "couldn't",
+  'wouldnt': "wouldn't",
+  'isnt': "isn't",
+  'arent': "aren't",
+  'wasnt': "wasn't",
+  'werent': "weren't",
+  'hasnt': "hasn't",
+  'havent': "haven't",
+  'hadnt': "hadn't",
+  'ive': "I've",
+  'youve': "you've",
+  'theyve': "they've",
+  'youre': "you're",
+  'theyre': "they're",
+  'im': "I'm",
 };
 
 // Fast English Lexicon for vocabulary checks

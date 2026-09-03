@@ -47,6 +47,9 @@
     }
   },
   "main": "electron/main.cjs",
+  "bin": {
+    "writely": "src/cli/writely.ts"
+  },
   "scripts": {
     "dev": "vite",
     "dev:electron": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -54,6 +57,7 @@
     "build:electron": "tsc && vite build && electron-builder",
     "preview": "vite preview",
     "bench": "tsx bench/realtime_bench.ts",
+    "writely": "tsx src/cli/writely.ts",
     "bridge": "tsx server/ws-bridge.ts",
     "tauri": "tauri",
     "electron": "electron .",

@@ -39,3 +39,5 @@ bench/results/
 # Temp
 *.tmp
 .opencode/
+inference/llama.cpp/build/
+inference/llama.cpp/
