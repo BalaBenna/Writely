@@ -1,4 +1,4 @@
-import { Suggestion } from '../types';
+import { Suggestion, WritingGoals, DEFAULT_GOALS } from '../types';
 
 interface GrammarRule {
   id: string;
@@ -7,6 +7,9 @@ interface GrammarRule {
   replacement: string | ((match: string, ...groups: string[]) => string);
   explanation: string | ((match: string, ...groups: string[]) => string);
   confidence: number;
+  domains?: string[];
+  skipDomains?: string[];
+  formality?: string[];
 }
 
 const GRAMMAR_RULES: GrammarRule[] = [
@@ -227,7 +230,301 @@ const GRAMMAR_RULES: GrammarRule[] = [
     explanation: 'Remove unnecessary space before the period.',
     confidence: 0.99,
   },
+  {
+    id: 'PUNCT_DOUBLE_SPACE',
+    pattern: / {2,}/g,
+    type: 'grammar',
+    replacement: ' ',
+    explanation: 'Multiple spaces detected. Use a single space.',
+    confidence: 0.98,
+  },
+  {
+    id: 'PUNCT_COMMA_SPLICE_THEN',
+    pattern: /,\s*then\b/i,
+    type: 'clarity',
+    replacement: '. Then',
+    explanation: 'Comma splice: use a period or semicolon before "then" to separate independent clauses.',
+    confidence: 0.85,
+  },
+
+  // 6. Articles & Determiners
+  {
+    id: 'ARTICLE_A_BEFORE_VOWEL',
+    pattern: /\b(a)\s+([aeiou][a-z]*)\b/gi,
+    type: 'grammar',
+    replacement: (_m, _a, word) => {
+      const vowelWords = ['hour', 'honest', 'honor', 'heir', 'herb'];
+      if (vowelWords.includes(word.toLowerCase())) return `an ${word}`;
+      return `an ${word}`;
+    },
+    explanation: 'Use "an" before vowel sounds.',
+    confidence: 0.92,
+  },
+  {
+    id: 'ARTICLE_AN_BEFORE_CONSONANT',
+    pattern: /\b(an)\s+([bcdfghjklmnpqrstvwxyz][a-z]*)\b/gi,
+    type: 'grammar',
+    replacement: (_m, _an, word) => {
+      const silentH = ['hour', 'honest', 'honor', 'heir', 'herb'];
+      if (silentH.includes(word.toLowerCase())) return `an ${word}`;
+      const consonantSound = ['university', 'uniform', 'unicorn', 'unique', 'user', 'unit', 'european', 'one', 'once'];
+      if (consonantSound.includes(word.toLowerCase())) return `a ${word}`;
+      return `a ${word}`;
+    },
+    explanation: 'Use "a" before consonant sounds (including "university" pronounced "yoo-").',
+    confidence: 0.88,
+  },
+  {
+    id: 'ARTICLE_A_AN_HOUR',
+    pattern: /\b(a)\s+(hour|honest|honor|heir)\b/gi,
+    type: 'grammar',
+    replacement: (_m, _a, word) => `an ${word}`,
+    explanation: '"H" is silent in this word — use "an".',
+    confidence: 0.96,
+  },
+
+  // 7. Tense & Verb Forms
+  {
+    id: 'TENSE_HAS_WENT',
+    pattern: /\b(has|have|had)\s+went\b/gi,
+    type: 'grammar',
+    replacement: (_m, aux) => `${aux} gone`,
+    explanation: 'Use "gone" as past participle with have/has/had ("has gone", not "has went").',
+    confidence: 0.96,
+  },
+  {
+    id: 'TENSE_DID_WENT2',
+    pattern: /\bdid\s+(went|gone|came|done)\b/gi,
+    type: 'grammar',
+    replacement: (_m, verb) => {
+      const base: Record<string, string> = { went: 'go', gone: 'go', came: 'come', done: 'do' };
+      return `did ${base[verb.toLowerCase()] || verb}`;
+    },
+    explanation: 'With auxiliary "did", use base form ("did go", not "did went").',
+    confidence: 0.97,
+  },
+  {
+    id: 'TENSE_HAVE_DID',
+    pattern: /\b(have|has)\s+did\b/gi,
+    type: 'grammar',
+    replacement: (_m, aux) => `${aux} done`,
+    explanation: 'Use past participle "done" with has/have.',
+    confidence: 0.96,
+  },
+  {
+    id: 'SVA_I_IS',
+    pattern: /\bI\s+is\b/g,
+    type: 'grammar',
+    replacement: 'I am',
+    explanation: 'First person takes "am", not "is".',
+    confidence: 0.99,
+  },
+  {
+    id: 'SVA_WE_WAS',
+    pattern: /\b(we|you|they)\s+was\b/gi,
+    type: 'grammar',
+    replacement: (_m, subj) => `${subj} were`,
+    explanation: 'Plural subjects take "were", not "was".',
+    confidence: 0.98,
+  },
+  {
+    id: 'SVA_I_HAS',
+    pattern: /\bI\s+has\b/g,
+    type: 'grammar',
+    replacement: 'I have',
+    explanation: 'Use "have" with "I".',
+    confidence: 0.99,
+  },
+
+  // 8. Double Negatives
+  {
+    id: 'DOUBLE_NEG_DONT_NO',
+    pattern: /\b(don't|doesn't|didn't|can't|cannot|won't|shouldn't)\s+have\s+no\b/gi,
+    type: 'grammar',
+    replacement: (_m, aux) => `${aux} have any`,
+    explanation: 'Double negative: use "any" instead of "no" with a negative auxiliary.',
+    confidence: 0.94,
+  },
+  {
+    id: 'DOUBLE_NEG_NEVER_NO',
+    pattern: /\bnever\s+have\s+no\b/gi,
+    type: 'grammar',
+    replacement: 'never have any',
+    explanation: 'Double negative — use "any" after a negative.',
+    confidence: 0.94,
+  },
+  {
+    id: 'DOUBLE_NEG_CANT_NO',
+    pattern: /\bcan't\s+get\s+no\b/gi,
+    type: 'grammar',
+    replacement: "can't get any",
+    explanation: 'Double negative detected.',
+    confidence: 0.95,
+  },
+
+  // 9. Passive Voice (flag as clarity, allow in academic per domain? flagged everywhere but softer in academic)
+  {
+    id: 'PASSIVE_BEEN_DONE',
+    pattern: /\b(is|are|was|were|be|been|being)\s+(done|made|created|written|shown|given|taken|found|known|seen|called|considered|expected|required)\b/gi,
+    type: 'clarity',
+    replacement: (_m) => _m,
+    explanation: 'Passive voice — consider active voice for stronger, clearer writing.',
+    confidence: 0.72,
+  },
+
+  // 10. Contractions (domain-aware: flagged in academic/business)
+  {
+    id: 'CONTRACTION_DONT_ACADEMIC',
+    pattern: /\b(don't|can't|won't|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|wouldn't|shouldn't|couldn't)\b/gi,
+    type: 'tone',
+    replacement: (_m) => _m,
+    explanation: 'Contraction may be too informal for academic/business writing. Consider the full form ("do not", "cannot").',
+    confidence: 0.70,
+    domains: ['academic', 'business'],
+  },
+  {
+    id: 'INFORMAL_PRONOUN_ACADEMIC',
+    pattern: /\b(I think|I believe|you can see|in my opinion)\b/gi,
+    type: 'tone',
+    replacement: (_m) => _m,
+    explanation: 'Informal pronoun/phrasing flagged for academic domain. Consider more objective phrasing.',
+    confidence: 0.68,
+    domains: ['academic'],
+  },
+
+  // 11. Wordiness & Redundancy (expanded)
+  {
+    id: 'WORDY_BASICALLY',
+    pattern: /\bbasically\b/gi,
+    type: 'clarity',
+    replacement: '',
+    explanation: 'Filler word: removing "basically" often strengthens the sentence.',
+    confidence: 0.75,
+  },
+  {
+    id: 'WORDY_ACTUALLY',
+    pattern: /\bactually\b/gi,
+    type: 'clarity',
+    replacement: '',
+    explanation: 'Filler: "actually" can often be removed without loss.',
+    confidence: 0.72,
+  },
+  {
+    id: 'WORDY_VERY_REALLY',
+    pattern: /\b(very|really)\s+(good|bad|important|interesting|big|small|large)\b/gi,
+    type: 'clarity',
+    replacement: (_m, _adv, adj) => adj,
+    explanation: 'Weak intensifier — use a stronger adjective or remove.',
+    confidence: 0.78,
+  },
+  {
+    id: 'WORDY_REPEAT_REASON',
+    pattern: /\bthe\s+reason\s+why\b/gi,
+    type: 'clarity',
+    replacement: 'the reason',
+    explanation: 'Redundant: "the reason why" → "the reason".',
+    confidence: 0.88,
+  },
+  {
+    id: 'WORDY_FUTURE_PLANS',
+    pattern: /\bfuture\s+plans\b/gi,
+    type: 'clarity',
+    replacement: 'plans',
+    explanation: 'Redundant: plans are by definition future.',
+    confidence: 0.90,
+  },
+  {
+    id: 'WORDY_PAST_HISTORY',
+    pattern: /\bpast\s+history\b/gi,
+    type: 'clarity',
+    replacement: 'history',
+    explanation: 'Redundant: history is past.',
+    confidence: 0.90,
+  },
+
+  // 12. Inclusive Language
+  {
+    id: 'INCLUSIVE_GUYS',
+    pattern: /\bhey\s+guys\b/gi,
+    type: 'tone',
+    replacement: 'hey everyone',
+    explanation: 'Inclusive language: consider "everyone" or "team" instead of "guys".',
+    confidence: 0.80,
+  },
+  {
+    id: 'INCLUSIVE_MANKIND',
+    pattern: /\bmankind\b/gi,
+    type: 'tone',
+    replacement: 'humanity',
+    explanation: 'Inclusive alternative: "humanity" or "humankind".',
+    confidence: 0.85,
+  },
+  {
+    id: 'INCLUSIVE_MANPOWER',
+    pattern: /\bmanpower\b/gi,
+    type: 'tone',
+    replacement: 'workforce',
+    explanation: 'Inclusive alternative: "workforce" or "staff".',
+    confidence: 0.85,
+  },
+  {
+    id: 'INCLUSIVE_CRAZY',
+    pattern: /\bthat'?s\s+crazy\b/gi,
+    type: 'tone',
+    replacement: "that's surprising",
+    explanation: 'Consider more precise, less stigmatizing language than "crazy".',
+    confidence: 0.70,
+  },
+
+  // 13. Commonly confused expansions
+  {
+    id: 'CONFUSED_WHO_WHOM',
+    pattern: /\bwhom\s+is\b/gi,
+    type: 'grammar',
+    replacement: 'who is',
+    explanation: 'Use "who" as subject ("who is"), "whom" as object.',
+    confidence: 0.88,
+  },
+  {
+    id: 'CONFUSED_COULD_OF',
+    pattern: /\bcould\s+of\b/gi,
+    type: 'grammar',
+    replacement: 'could have',
+    explanation: '"Could have", not "could of" (mishearing of "could\'ve").',
+    confidence: 0.98,
+  },
+  {
+    id: 'CONFUSED_SHOULD_OF',
+    pattern: /\bshould\s+of\b/gi,
+    type: 'grammar',
+    replacement: 'should have',
+    explanation: 'Use "should have" (or "should\'ve").',
+    confidence: 0.98,
+  },
+  {
+    id: 'CONFUSED_WOULD_OF',
+    pattern: /\bwould\s+of\b/gi,
+    type: 'grammar',
+    replacement: 'would have',
+    explanation: 'Use "would have" (or "would\'ve").',
+    confidence: 0.98,
+  },
+  {
+    id: 'CONFUSED_BETWEEN_YOU_AND_I',
+    pattern: /\bbetween\s+you\s+and\s+I\b/gi,
+    type: 'grammar',
+    replacement: 'between you and me',
+    explanation: 'Use object pronoun after preposition: "between you and me".',
+    confidence: 0.94,
+  },
 ];
+
+function shouldApplyRule(rule: GrammarRule, goals: WritingGoals): boolean {
+  if (rule.domains && !rule.domains.includes(goals.domain)) return false;
+  if (rule.skipDomains && rule.skipDomains.includes(goals.domain)) return false;
+  // Casual ignores wordiness/passive gently — reduce but don't skip fully; caller filters by confidence
+  return true;
+}
 
 /**
  * Fast non-autoregressive grammar tagger (<15ms)
@@ -235,7 +532,8 @@ const GRAMMAR_RULES: GrammarRule[] = [
 export function checkGrammar(
   sentenceText: string,
   sentenceOffset: number,
-  sentenceIndex: number
+  sentenceIndex: number,
+  goals: WritingGoals = DEFAULT_GOALS
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
 
@@ -259,8 +557,11 @@ export function checkGrammar(
     });
   }
 
-  // Check 2: Pattern-based rules
+  // Check 2: Pattern-based rules (goals-aware)
   for (const rule of GRAMMAR_RULES) {
+    if (!shouldApplyRule(rule, goals)) continue;
+    // In casual/creative, dampen low-confidence clarity suggestions
+    if ((goals.domain === 'casual' || goals.domain === 'creative') && rule.type === 'clarity' && rule.confidence < 0.85) continue;
     const flags = rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g';
     const regex = new RegExp(rule.pattern.source, flags);
     let match: RegExpExecArray | null;

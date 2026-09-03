@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export type NavScreen = 'editor' | 'models' | 'dictionary' | 'history';
@@ -20,6 +22,8 @@ interface AppSidebarProps {
   onOpenDownload: () => void;
   onOpenSettings: () => void;
   onOpenRewrite: () => void;
+  isDark: boolean;
+  toggleTheme: () => void;
 }
 
 export const AppSidebar: React.FC<AppSidebarProps> = ({
@@ -28,6 +32,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenDownload,
   onOpenSettings,
   onOpenRewrite,
+  isDark,
+  toggleTheme,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -141,6 +147,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         >
           <Settings className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Settings</span>}
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          title={collapsed ? (isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode') : undefined}
+          className={`w-full flex items-center ${collapsed ? 'justify-center' : 'space-x-2.5'} px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/5 transition-colors`}
+        >
+          {isDark ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
+          {!collapsed && <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
 
         <button

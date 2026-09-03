@@ -38,6 +38,26 @@ const TEST_CASES: BenchCase[] = [
     text: 'He go to the store yesterday . Their are many reasons why this is bad , due to the fact that he don\'t have no money . We is hoping that you can fix this asap .',
     expectedMinSuggestions: 4,
   },
+  {
+    name: 'Double Negative ("don\'t have no")',
+    text: "He don't have no money.",
+    expectedMinSuggestions: 1,
+  },
+  {
+    name: 'Article a/an ("a apple")',
+    text: 'It is a apple and an university project.',
+    expectedMinSuggestions: 1,
+  },
+  {
+    name: 'Tense ("has went")',
+    text: 'She has went to the store.',
+    expectedMinSuggestions: 1,
+  },
+  {
+    name: 'Could of → could have',
+    text: 'You could of done better.',
+    expectedMinSuggestions: 1,
+  },
 ];
 
 async function runBenchmark() {

@@ -44,7 +44,7 @@ export const DocumentStats: React.FC<DocumentStatsProps> = ({ metrics }) => {
       </div>
 
       {/* Grid Stats */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-3 gap-2 text-xs">
         <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
           <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <FileText className="w-3 h-3 text-slate-400" /> Words
@@ -52,6 +52,33 @@ export const DocumentStats: React.FC<DocumentStatsProps> = ({ metrics }) => {
           <div className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 mt-0.5">
             {metrics.wordCount}
           </div>
+        </div>
+
+        <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400">Characters</div>
+          <div className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 mt-0.5">
+            {metrics.charCount.toLocaleString()}
+          </div>
+          <div className="text-[10px] text-slate-400">{metrics.charCountNoSpaces.toLocaleString()} w/o spaces</div>
+        </div>
+
+        <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <BookOpen className="w-3 h-3 text-slate-400" /> Paragraphs
+          </div>
+          <div className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 mt-0.5">
+            {metrics.paragraphCount}
+          </div>
+        </div>
+
+        <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <BookOpen className="w-3 h-3 text-slate-400" /> Sentences
+          </div>
+          <div className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 mt-0.5">
+            {metrics.sentenceCount}
+          </div>
+          <div className="text-[10px] text-slate-400">avg {metrics.avgWordsPerSentence} w/s</div>
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
@@ -65,20 +92,12 @@ export const DocumentStats: React.FC<DocumentStatsProps> = ({ metrics }) => {
 
         <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
           <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <BookOpen className="w-3 h-3 text-slate-400" /> Sentences
-          </div>
-          <div className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 mt-0.5">
-            {metrics.sentenceCount}
-          </div>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-200 dark:border-white/5">
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-slate-400" /> Clarity
           </div>
           <div className="font-mono text-sm font-semibold text-indigo-600 dark:text-indigo-300 mt-0.5">
             {metrics.clarityScore}%
           </div>
+          {metrics.longestSentenceWords > 25 && <div className="text-[10px] text-amber-600 dark:text-amber-400">longest {metrics.longestSentenceWords}w — split?</div>}
         </div>
       </div>
     </div>

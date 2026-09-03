@@ -1,4 +1,5 @@
 import { Suggestion } from '../types';
+import { EXTRA_DICTIONARY_WORDS } from './enWords';
 
 /**
  * Common misspelling lookup dictionary for O(1) instant correction (<0.1ms)
@@ -164,6 +165,11 @@ const BASE_DICTIONARY = new Set([
   'worker', 'world', 'worry', 'would', 'write', 'writer', 'wrong', 'yard', 'yeah', 'year', 'yes', 'yet',
   'you', 'young', 'your', 'yourself'
 ]);
+
+// Merge extra dictionary into base
+for (const w of EXTRA_DICTIONARY_WORDS) {
+  BASE_DICTIONARY.add(w);
+}
 
 // User dictionary cache (saved in localStorage if available)
 const userDictionary = new Set<string>();

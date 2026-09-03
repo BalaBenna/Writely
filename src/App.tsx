@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppSidebar, NavScreen } from './components/Sidebar/AppSidebar';
-import { Navbar } from './components/Header/Navbar';
 import { WritelyEditor } from './components/Editor/WritelyEditor';
 import { IssuesPanel } from './components/Sidebar/IssuesPanel';
 import { DocumentStats } from './components/Sidebar/DocumentStats';
@@ -13,7 +12,8 @@ import { DownloadModal } from './components/Download/DownloadModal';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { analyzeDocument } from './engine/hybridEngine';
 import { addToUserDictionary } from './engine/spell';
-import { Suggestion, DocumentMetrics, EngineTelemetry } from './types';
+import { Suggestion, DocumentMetrics, EngineTelemetry, WritingGoals, DEFAULT_GOALS } from './types';
+import { GoalsBar } from './components/Goals/GoalsBar';
 
 const INITIAL_TEXT = `He go to the store yesterday and bought three apple . Their are many reasons why this is a bad idea , due to the fact that he don't have no money . We is hoping that you can fix this asap .
 
@@ -26,11 +26,15 @@ export const App: React.FC = () => {
   const [metrics, setMetrics] = useState<DocumentMetrics>({
     wordCount: 0,
     charCount: 0,
+    charCountNoSpaces: 0,
+    paragraphCount: 0,
     sentenceCount: 0,
     readingTimeMin: 1,
     readabilityScore: 75,
     gradeLevel: 'Standard',
     clarityScore: 92,
+    avgWordsPerSentence: 0,
+    longestSentenceWords: 0,
   });
   const [telemetry, setTelemetry] = useState<EngineTelemetry>({
     lastLatencyMs: 1.35,
@@ -43,6 +47,17 @@ export const App: React.FC = () => {
 
   const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
   const [debounceMs, setDebounceMs] = useState<number>(80);
+  const [goals, setGoals] = useState<WritingGoals>(() => {
+    try {
+      const saved = localStorage.getItem('writely_goals');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_GOALS;
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('writely_goals', JSON.stringify(goals)); } catch {}
+  }, [goals]);
 
   // Persistent Theme State
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -78,13 +93,13 @@ export const App: React.FC = () => {
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Engine analysis runner
+  // Engine analysis runner — goals-aware
   const runAnalysis = useCallback((docText: string) => {
-    const result = analyzeDocument(docText);
+    const result = analyzeDocument(docText, goals);
     setSuggestions(result.suggestions);
     setMetrics(result.metrics);
     setTelemetry(result.telemetry);
-  }, []);
+  }, [goals]);
 
   // Debounced input handler (<80ms)
   const handleTextChange = (newText: string) => {
@@ -97,10 +112,10 @@ export const App: React.FC = () => {
     }, debounceMs);
   };
 
-  // Run initial analysis on mount
+  // Initial + goals-aware re-run
   useEffect(() => {
-    runAnalysis(INITIAL_TEXT);
-  }, [runAnalysis]);
+    runAnalysis(text);
+  }, [runAnalysis]); // runs on mount and whenever goals change (runAnalysis identity changes)
 
   // Accept a single suggestion
   const handleAcceptSuggestion = (s: Suggestion) => {
@@ -160,27 +175,28 @@ export const App: React.FC = () => {
         onOpenDownload={() => setIsDownloadOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenRewrite={() => setIsRewriteOpen(true)}
+        isDark={isDark}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main View Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Navbar */}
-        <Navbar
-          telemetry={telemetry}
-          onOpenDownload={() => setIsDownloadOpen(true)}
-          onOpenModels={() => setCurrentScreen('models')}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onOpenRewrite={() => setIsRewriteOpen(true)}
-          isDark={isDark}
-          toggleTheme={toggleTheme}
-        />
 
         {/* Dynamic Screen Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           {currentScreen === 'editor' && (
             <div className="max-w-7xl h-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
               {/* Left/Center: Interactive Writing Canvas */}
-              <div className="lg:col-span-8 flex flex-col min-h-[550px]">
+              <div className="lg:col-span-8 flex flex-col min-h-[550px] space-y-4">
+                <GoalsBar goals={goals} onChange={setGoals} />
+                {telemetry.tone && (
+                  <div className="flex items-center gap-2 text-xs bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
+                    <span className="text-base">{telemetry.tone.emoji}</span>
+                    <span className="text-slate-200 font-medium">{telemetry.tone.overall}</span>
+                    <span className="text-slate-500">— {telemetry.tone.description}</span>
+                    <span className="ml-auto text-[11px] text-slate-500">{telemetry.tone.scores.formal ?? 0}% formal • {telemetry.tone.scores.confident ?? 0}% confident</span>
+                  </div>
+                )}
                 <WritelyEditor
                   text={text}
                   onChange={handleTextChange}

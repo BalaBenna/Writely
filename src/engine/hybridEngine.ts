@@ -1,9 +1,10 @@
-import { Suggestion, DocumentMetrics, EngineTelemetry } from '../types';
+import { Suggestion, DocumentMetrics, EngineTelemetry, WritingGoals, DEFAULT_GOALS } from '../types';
 import { splitSentences, SentenceNode } from './sentence';
 import { checkSpelling, loadUserDictionary } from './spell';
 import { checkGrammar } from './grammar';
 import { globalSentenceCache } from './cache';
 import { modelManager } from './localModel';
+import { analyzeTone } from './toneDetector';
 
 // Initialize user dictionary on startup
 loadUserDictionary();
@@ -22,6 +23,8 @@ export function computeDocumentMetrics(text: string, sentences: SentenceNode[]):
   const words = text.trim().split(/\s+/).filter((w) => w.length > 0);
   const wordCount = words.length;
   const charCount = text.length;
+  const charCountNoSpaces = text.replace(/\s/g, '').length;
+  const paragraphCount = text.trim() === '' ? 0 : text.trim().split(/\n\s*\n/).filter(p => p.trim().length > 0).length || 1;
   const sentenceCount = Math.max(1, sentences.length);
 
   // Readability calculation
@@ -47,15 +50,24 @@ export function computeDocumentMetrics(text: string, sentences: SentenceNode[]):
   else gradeLevel = 'Graduate / Academic (Very Difficult)';
 
   const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
+  const avgWordsPerSentence = sentenceCount > 0 ? parseFloat((wordCount / sentenceCount).toFixed(1)) : 0;
+  const longestSentenceWords = sentences.reduce((max, s) => {
+    const wc = s.text.trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(max, wc);
+  }, 0);
 
   return {
     wordCount,
     charCount,
+    charCountNoSpaces,
+    paragraphCount,
     sentenceCount,
     readingTimeMin,
     readabilityScore: readingEase,
     gradeLevel,
     clarityScore: Math.max(60, Math.min(100, 100 - Math.round(wordsPerSentence * 0.8))),
+    avgWordsPerSentence,
+    longestSentenceWords,
   };
 }
 
@@ -68,7 +80,7 @@ export interface AnalysisResult {
 /**
  * Top-level Hybrid Engine orchestrating Tiers 0-3 (<50ms target)
  */
-export function analyzeDocument(documentText: string): AnalysisResult {
+export function analyzeDocument(documentText: string, goals: WritingGoals = DEFAULT_GOALS): AnalysisResult {
   const startTime = performance.now();
 
   // Step 1: Tokenize & Sentence Split (<0.5ms)
@@ -100,8 +112,8 @@ export function analyzeDocument(documentText: string): AnalysisResult {
       // Tier 1: SymSpell Spell Check (<2ms)
       const spellSuggestions = checkSpelling(s.text, s.start, s.index);
 
-      // Tier 2: Non-autoregressive Grammar Tagger (<15ms)
-      const grammarSuggestions = checkGrammar(s.text, s.start, s.index);
+      // Tier 2: Non-autoregressive Grammar Tagger (<15ms) — goals-aware
+      const grammarSuggestions = checkGrammar(s.text, s.start, s.index, goals);
 
       // Combine suggestions for this sentence
       const sentenceSuggestions = [...spellSuggestions, ...grammarSuggestions];
@@ -131,6 +143,8 @@ export function analyzeDocument(documentText: string): AnalysisResult {
   const totalMs = parseFloat((performance.now() - startTime).toFixed(2));
   const engineMs = parseFloat((totalMs - tokenizerMs).toFixed(2));
 
+  const tone = analyzeTone(documentText);
+
   const telemetry: EngineTelemetry = {
     lastLatencyMs: totalMs,
     tokenizerMs,
@@ -138,6 +152,7 @@ export function analyzeDocument(documentText: string): AnalysisResult {
     cacheHit: allCacheHits,
     activeModel: modelManager.getActiveRealtimeModel().name,
     timestamp: Date.now(),
+    tone,
   };
 
   return {

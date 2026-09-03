@@ -30,7 +30,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         case 'analyze': {
           const t0 = performance.now();
-          const result = analyzeDocument(msg.text || '');
+          const result = analyzeDocument(msg.text || '', msg.goals);
           const duration = Math.round(performance.now() - t0);
           ws.send(JSON.stringify({
             id: msg.id,
