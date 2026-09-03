@@ -1,28 +1,30 @@
 # Installing Writely
 
-## Quick Download (Recommended)
+## Quick Download (Recommended) — Electron + Tauri
 
-Every push of a version tag `v*` builds fresh installers and attaches them to **GitHub Releases**.
+Every push of a version tag `v*` builds **both Electron and Tauri** installers in parallel via `.github/workflows/release.yml` and attaches them to **GitHub Releases**.
 
 - **Releases page:** https://github.com/BalaBenna/Writely/releases
 - **Latest:** https://github.com/BalaBenna/Writely/releases/latest
+- **Web (no install):** https://balabenna.github.io/Writely/ — full editor, PWA caches for offline.
+- **Extension:** `extensions/chrome/` → `chrome://extensions` → Developer mode → Load unpacked → ensure `npm run bridge` on `ws://127.0.0.1:8765`.
 
-| Platform | File | How to install |
+| Platform | Electron (recommended, familiar) | Tauri (lightweight) |
 |---|---|---|
-| **macOS 12+ Universal (M1–M4 + Intel)** | `Writely_*_universal.dmg` | Open DMG → drag Writely to Applications → right-click → Open (first launch, ad-hoc sign). |
-| **Windows 10/11 64-bit** | `Writely_*_x64-setup.exe` (NSIS) / `.msi` | Double-click → Next → Install. SmartScreen may warn on first unsigned build — click More info → Run anyway. |
-| **Web (no install)** | — | https://balabenna.github.io/Writely/ — full editor, PWA caches for offline. |
-| **Chrome / Edge / Brave extension** | `extensions/chrome/` | `chrome://extensions` → Developer mode → Load unpacked → select `extensions/chrome` → ensure desktop app or `npm run bridge` on `ws://127.0.0.1:8765`. |
+| **macOS 12+ Universal** | `Writely-1.2.0.dmg` (~85 MB, Electron) — `npm run dev:electron` | `Writely_*_universal.dmg` (~12.4 MB) — `npm run tauri dev` |
+| **Windows 10/11 64-bit** | `Writely Setup 1.2.0.exe` (Electron NSIS) | `Writely_*_x64-setup.exe` / `.msi` (Tauri NSIS) |
+
+Install: Open DMG → drag to Applications → right-click Open (ad-hoc sign until Apple cert). Windows: More info → Run anyway on first unsigned build.
 
 ### Regular updates
 
-- **Auto-update:** Tauri updater checks `https://github.com/BalaBenna/Writely/releases/latest` on launch (when configured). Until Apple cert is added, macOS will prompt on update — accept.
-- **Manual:** Re-download latest `.dmg`/`.exe` from Releases and reinstall (settings + dictionary in `~/.writely/` / `localStorage` are preserved).
+- **Manual:** Re-download latest `.dmg`/`.exe` from Releases and reinstall (settings in `~/.writely/` / `localStorage` preserved).
+- **Auto-update:** Electron autoUpdater (electron-builder) and Tauri updater both check `https://github.com/BalaBenna/Writely/releases/latest` when configured.
 
 ### Package managers (coming)
 
-- `brew install --cask writely` — requires Homebrew cask PR (formula points to Releases `.dmg` + `sha256`). Until merged, use DMG.
-- `winget install Writely.Writely` — requires winget-pkgs PR (installer URL + hash). Until merged, use `.exe`.
+- `brew install --cask writely` — cask PR points to Releases `.dmg` + `sha256` (choose Electron or Tauri URL).
+- `winget install Writely.Writely` — winget-pkgs PR.
 
 ### Building locally
 
@@ -30,11 +32,13 @@ Every push of a version tag `v*` builds fresh installers and attaches them to **
 git clone https://github.com/BalaBenna/Writely.git
 cd Writely
 npm ci
-npm run build        # web
-npm run tauri build  # local dmg/exe (needs Rust toolchain)
+npm run build                 # web → dist/
+npm run dev:electron          # Electron dev (vite + electron)
+npm run build:electron        # Electron prod → release-electron/*.dmg/*.exe (no Rust)
+npm run tauri build           # Tauri local dmg/exe (needs Rust)
 ```
 
 ### Signing notes
 
-- macOS is currently **ad-hoc signed** (`signingIdentity: null`). For Gatekeeper bypass-free distribution, enroll in Apple Developer Program, set `APPLE_SIGNING_IDENTITY` and `notarytool` credentials in `release.yml`.
-- Windows is unsigned. For SmartScreen-free, add EV cert `certificateThumbprint` + `timestampUrl` in `tauri.conf.json:windows` and store cert as GitHub secret.
+- macOS ad-hoc signed (`tauri.conf.json:macOS.signingIdentity: null`, `electron builder dmg.sign: false`). Add Apple Developer `APPLE_SIGNING_IDENTITY` + notarytool for gatekeeper-free.
+- Windows unsigned. Add EV cert for SmartScreen-free in `electron-builder nsis` + `tauri.conf.json:windows`.

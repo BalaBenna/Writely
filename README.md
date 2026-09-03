@@ -36,25 +36,26 @@ Keystroke
 
 ## 🚀 Download & Installation
 
-Writely ships 3 ways: **Desktop** (Tauri ~12.4 MB) + **Web** (PWA) + **Browser Extension**. All 100% offline.
+Writely ships 4 ways: **Electron Desktop** (recommended, familiar) + **Tauri Desktop** (lightweight ~12.4 MB) + **Web** (PWA) + **Browser Extension**. All 100% offline.
 
 ### Where to download (regular releases)
 
-Every `git tag v*` auto-builds installers via GitHub Actions (`.github/workflows/release.yml:1`) and attaches them to **GitHub Releases**.
+Every `git tag v*` auto-builds installers via GitHub Actions (`.github/workflows/release.yml:1` — **Tauri + Electron in parallel**) and attaches them to **GitHub Releases**.
 
 * **Releases page (all versions):** https://github.com/BalaBenna/Writely/releases
 * **Latest (always fresh):** https://github.com/BalaBenna/Writely/releases/latest
-* **In-app:** Download button (top bar → Download) links to latest release assets.
+* **In-app:** Download button (top bar → Download) fetches latest assets via GitHub API and offers the newest `.dmg/.exe`.
 * **Install docs:** see `docs/INSTALL.md` for notarization / SmartScreen notes.
 
-| Platform | File on Releases | Install |
-|---|---|---|
-| **macOS 12+ Universal (M1–M4 + Intel)** | `Writely_*_universal.dmg` | Open DMG → drag to Applications → right-click Open (ad-hoc signed; Apple cert planned → gatekeeper-free) |
-| **Windows 10/11 64-bit** | `Writely_*_x64-setup.exe` (+ `.msi`) | Double-click → Next. SmartScreen “More info → Run anyway” on first unsigned build |
-| **Web (no install)** | — | **https://balabenna.github.io/Writely/** — full editor, PWA caches offline after first load (Pages workflow `pages.yml:1`) |
+| Platform | Electron (recommended) | Tauri (lightweight) | Web |
+|---|---|---|---|
+| **macOS 12+ Universal (M1–M4 + Intel)** | `Writely-1.2.0.dmg` (~85 MB, Electron) | `Writely_*_universal.dmg` (~12.4 MB, Tauri) | https://balabenna.github.io/Writely/ |
+| **Windows 10/11 64-bit** | `Writely Setup 1.2.0.exe` (Electron NSIS) | `Writely_*_x64-setup.exe` + `.msi` (Tauri) | — |
+| Install | Open DMG → drag to Applications → right-click Open (ad-hoc) | Same (12 MB, faster) | PWA caches offline |
+| Dev | `npm run dev:electron` | `npm run tauri dev` | `npm run dev` |
 
-* **Homebrew Cask:** `brew install --cask writely` *(formula PR pending — points to Releases `.dmg` + sha256; until merged use DMG)*
-* **WinGet:** `winget install Writely.Writely` *(winget-pkgs PR pending; until merged use `.exe`)*
+* **Homebrew Cask:** `brew install --cask writely` *(points to Electron or Tauri DMG; PR pending)*
+* **WinGet:** `winget install Writely.Writely` *(winget-pkgs PR pending)*
 * **Hardware Acceleration:** macOS ANE + Metal (12–22ms), Windows DirectML / Vulkan / Intel NPU; local models in `~/.writely/models/`.
 
 ---
