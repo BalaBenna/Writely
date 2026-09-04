@@ -262,7 +262,7 @@ class CloudProviderManager {
   // -------------------------------------------------------------------------
   // Unified execution — routes to correct API shape per provider
   // -------------------------------------------------------------------------
-  async executeCloudRewrite(text: string, tone: ToneStyle, modelId: string): Promise<RewriteResult> {
+  async executeCloudRewrite(text: string, tone: ToneStyle, modelId: string, extraInstruction?: string): Promise<RewriteResult> {
     const model = CLOUD_MODELS.find((m) => m.id === modelId) || CLOUD_MODELS.find(m => m.modelId === modelId) || null;
     // Allow ad-hoc modelId even if not in catalog: infer provider from active model or first configured
     let provider: CloudProviderId = (model?.provider as CloudProviderId) || 'openai';
@@ -280,7 +280,10 @@ class CloudProviderManager {
     const cfg = PROVIDER_CONFIGS[provider];
     const key = this.getApiKey(provider);
     const t0 = performance.now();
-    const systemPrompt = `You are Writely, an elite writing assistant. Rewrite the user's text in a ${tone.toUpperCase()} tone. Return only the rewritten text without markdown fences, preamble, or conversational filler.`;
+    let systemPrompt = `You are Writely, an elite writing assistant. Rewrite the user's text in a ${tone.toUpperCase()} tone. Return only the rewritten text without markdown fences, preamble, or conversational filler.`;
+    if (extraInstruction?.trim()) {
+      systemPrompt += ` Additional user instruction (follow it while rewriting): ${extraInstruction.trim()}`;
+    }
 
     // Branch per provider family
     try {
@@ -362,6 +365,84 @@ class CloudProviderManager {
     return { tone, original: text, rewritten: text, explanation: `Cloud inference fallback. Check ${cfg?.displayName || provider} API key / model selection.`, latencyMs: Math.round(performance.now() - t0), providerUsed: model?.name || nativeModelId };
   }
 
+  // Translation via cloud (user's own key). Local offline engine has no
+  // translator, so this is cloud/custom-only by design.
+  async executeTranslation(text: string, targetLang: string): Promise<{ translated: string; latencyMs: number; providerUsed: string }> {
+    const t0 = performance.now();
+    const active = CLOUD_MODELS.find((m) => m.id === this.activeModelId) || null;
+    const provider: CloudProviderId = (active?.provider as CloudProviderId) || 'openrouter';
+    const nativeModelId = active?.modelId || 'openrouter/auto';
+    const name = active?.name || nativeModelId;
+    const key = this.getApiKey(provider);
+    const cfg = PROVIDER_CONFIGS[provider];
+    const systemPrompt = `You are a professional translator. Translate the user's text to ${targetLang}. Return ONLY the translated text — no explanations, no markdown fences, no preamble. Preserve tone and formatting.`;
+    const fail = () => ({ translated: '', latencyMs: Math.round(performance.now() - t0), providerUsed: name });
+
+    if (!key) return fail();
+    try {
+      if (provider === 'anthropic') {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: nativeModelId, max_tokens: 2048, system: systemPrompt, messages: [{ role: 'user', content: text }] }),
+        });
+        if (!res.ok) return fail();
+        const data = await res.json();
+        const out = (data.content?.[0]?.text || '').trim();
+        return { translated: out, latencyMs: Math.round(performance.now() - t0), providerUsed: name };
+      }
+      if (provider === 'gemini') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(nativeModelId)}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nText:\n${text}` }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 2048 } }),
+        });
+        if (!res.ok) return fail();
+        const data = await res.json();
+        const out = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        return { translated: out, latencyMs: Math.round(performance.now() - t0), providerUsed: name };
+      }
+      if (provider === 'cohere') {
+        const res = await fetch('https://api.cohere.ai/v1/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({ model: nativeModelId, message: `${systemPrompt}\n\nText:\n${text}`, temperature: 0.2 }),
+        });
+        if (!res.ok) return fail();
+        const data = await res.json();
+        const out = (data.text || data.response || '').trim();
+        return { translated: out, latencyMs: Math.round(performance.now() - t0), providerUsed: name };
+      }
+      if (provider === 'minimax') {
+        const res = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({ model: nativeModelId, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }], temperature: 0.2 }),
+        });
+        if (!res.ok) return fail();
+        const data = await res.json();
+        const out = (data.choices?.[0]?.message?.content || '').trim();
+        return { translated: out, latencyMs: Math.round(performance.now() - t0), providerUsed: name };
+      }
+      // Generic OpenAI-compatible (OpenAI, Groq, DeepSeek, OpenRouter, Fireworks, Together, Mistral, Perplexity, xAI)
+      const base = cfg?.baseUrl || 'https://openrouter.ai/api/v1';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` };
+      if (provider === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://writely.ai';
+        headers['X-Title'] = 'Writely';
+      }
+      const res = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ model: nativeModelId, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }], temperature: 0.2 }),
+      });
+      if (!res.ok) return fail();
+      const data = await res.json();
+      const out = (data.choices?.[0]?.message?.content || '').trim();
+      return { translated: out, latencyMs: Math.round(performance.now() - t0), providerUsed: name };
+    } catch {
+      return fail();
+    }
+  }
+
   // Grammar correction via cloud (returns Suggestions-like text)
   async executeCloudGrammar(text: string, modelId?: string): Promise<{ corrected: string; latencyMs: number; providerUsed: string }> {
     const targetId = modelId || this.activeModelId;
@@ -379,9 +460,10 @@ class CloudProviderManager {
   }
 
   // For custom OpenAI-compatible endpoint (Ollama/LM Studio/vLLM)
-  async executeCustomRewrite(text: string, tone: ToneStyle): Promise<RewriteResult> {
+  async executeCustomRewrite(text: string, tone: ToneStyle, extraInstruction?: string): Promise<RewriteResult> {
     const t0 = performance.now();
-    const systemPrompt = `You are Writely. Rewrite in ${tone.toUpperCase()} tone. Return only rewritten text.`;
+    let systemPrompt = `You are Writely. Rewrite in ${tone.toUpperCase()} tone. Return only rewritten text.`;
+    if (extraInstruction?.trim()) systemPrompt += ` Additional user instruction: ${extraInstruction.trim()}`;
     try {
       const headers: Record<string,string> = { 'Content-Type': 'application/json' };
       if (this.customEndpoint.apiKey) headers['Authorization'] = `Bearer ${this.customEndpoint.apiKey}`;

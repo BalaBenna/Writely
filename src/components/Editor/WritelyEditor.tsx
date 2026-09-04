@@ -1,7 +1,29 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, Copy, Check, Trash2 } from 'lucide-react';
 import { Suggestion } from '../../types';
-import { SuggestionCard } from './SuggestionCard';
+import { SuggestionCard, isWordSuggestion } from './SuggestionCard';
+import { SelectionAssistant } from './SelectionAssistant';
+
+// Estimate popup height for anchoring. Word card is compact,
+// sentence card is taller.
+function estimatedCardHeight(s: Suggestion): number {
+  return isWordSuggestion(s) ? 190 : 300;
+}
+
+// Viewport-fixed position (for a document.body portal): the popup sits
+// JUST BELOW the hovered word/sentence. Only when there is no room below
+// does it fall back above. Clamped inside the viewport.
+function positionForRect(rect: DOMRect, s: Suggestion): { top: number; left: number } {
+  const CARD_W = isWordSuggestion(s) ? 260 : 400;
+  const GAP = 6;
+  const estH = estimatedCardHeight(s);
+  const left = Math.max(8, Math.min(rect.left, window.innerWidth - CARD_W - 8));
+  const below = rect.bottom + GAP;
+  const top =
+    below + estH <= window.innerHeight - 8 ? below : Math.max(8, rect.top - estH - GAP);
+  return { top, left };
+}
 
 interface WritelyEditorProps {
   text: string;
@@ -51,6 +73,8 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
 
   const [copied, setCopied] = useState(false);
   const [cardPosition, setCardPosition] = useState({ top: 100, left: 100 });
+  // Explicit text selection → Grammarly-style blue pill + rich popup
+  const [textSelection, setTextSelection] = useState<{ start: number; end: number } | null>(null);
 
   // Sync scrolling between textarea and highlighted backdrop
   const handleScroll = useCallback(() => {
@@ -69,20 +93,42 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
   const activeSuggestion = suggestions.find((s) => s.id === activeSuggestionId) || null;
   const activeIndex = suggestions.findIndex((s) => s.id === activeSuggestionId);
 
-  // Show suggestion card on hover (Grammarly style)
+  // Show suggestion card on hover (Grammarly style).
+  // Position is viewport-fixed and the card is portalled to document.body,
+  // so it renders OUTSIDE the overflow-hidden editor container (never clipped).
   const handleIssueMouseEnter = (s: Suggestion, e: React.MouseEvent) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
 
     const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const container = containerRef.current?.getBoundingClientRect();
-    if (container) {
-      setCardPosition({
-        top: rect.bottom - container.top + (backdropRef.current?.scrollTop || 0) + 4,
-        left: rect.left - container.left,
-      });
-      setActiveSuggestionId(s.id);
-    }
+    setCardPosition(positionForRect(rect, s));
+    setActiveSuggestionId(s.id);
   };
+
+  // Keep the portalled card anchored to its <mark> on scroll/resize.
+  useEffect(() => {
+    if (!activeSuggestionId) return;
+    const anchor = suggestions.find((s) => s.id === activeSuggestionId) || null;
+    if (!anchor) return;
+
+    const reposition = () => {
+      const el = document.querySelector(`[data-suggestion-id="${anchor.id}"]`);
+      if (!el) return;
+      setCardPosition(positionForRect(el.getBoundingClientRect(), anchor));
+    };
+
+    const ta = textareaRef.current;
+    const bd = backdropRef.current;
+    ta?.addEventListener('scroll', reposition, { passive: true });
+    bd?.addEventListener('scroll', reposition, { passive: true });
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      ta?.removeEventListener('scroll', reposition);
+      bd?.removeEventListener('scroll', reposition);
+      window.removeEventListener('scroll', reposition);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [activeSuggestionId, suggestions]);
 
   const handleIssueMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
@@ -100,9 +146,45 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
     }, 250);
   };
 
+  // Track explicit selection in the textarea to anchor the blue pill.
+  // Collapsed caret or selection while the suggestion card is hovered → hide.
+  const updateTextSelection = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const s = ta.selectionStart ?? 0;
+    const e = ta.selectionEnd ?? 0;
+    if (e > s && e - s >= 2 && document.activeElement === ta) {
+      setActiveSuggestionId(null);
+      setTextSelection({ start: s, end: e });
+    } else {
+      setTextSelection(null);
+    }
+  }, [setActiveSuggestionId]);
+
+  // Apply the assistant's corrected text over the selected range
+  const handleApplySelection = useCallback(
+    (corrected: string, sel: { start: number; end: number }) => {
+      const updated = text.slice(0, sel.start) + corrected + text.slice(sel.end);
+      onChange(updated);
+      setTextSelection(null);
+      setActiveSuggestionId(null);
+      requestAnimationFrame(() => {
+        const ta = textareaRef.current;
+        if (ta) {
+          const pos = sel.start + corrected.length;
+          ta.focus();
+          try {
+            ta.setSelectionRange(pos, pos);
+          } catch (_) {}
+        }
+      });
+    },
+    [text, onChange, setActiveSuggestionId]
+  );
+
   // Build the highlight overlay.
   // The entire overlay has color:transparent so no text is visible.
-  // Only the CSS text-decoration (wavy underlines with explicit colors)
+  // Only the CSS text-decoration (horizontal underlines with explicit colors)
   // and background-color on <mark> elements show through.
   const renderHighlightedText = () => {
     if (!text) return null;
@@ -133,6 +215,7 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
       segments.push(
         <mark
           key={`issue-${s.id}`}
+          data-suggestion-id={s.id}
           onMouseEnter={(e) => handleIssueMouseEnter(s, e)}
           onMouseLeave={handleIssueMouseLeave}
           className={`${classMap[s.type]} ${isActive ? 'active ring-2 ring-indigo-500/80' : ''} pointer-events-auto cursor-pointer`}
@@ -232,6 +315,9 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
           ref={textareaRef}
           value={text}
           onChange={(e) => onChange(e.target.value)}
+          onSelect={updateTextSelection}
+          onKeyUp={updateTextSelection}
+          onMouseUp={updateTextSelection}
           onScroll={handleScroll}
           placeholder="Start typing or paste your text here to analyze with local AI..."
           spellCheck={false}
@@ -242,7 +328,7 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
           LAYER 2 (FRONT): Highlight overlay — sits IN FRONT of textarea.
           
           KEY: `color: transparent` on container makes ALL text invisible.
-          The wavy underlines survive because text-decoration uses explicit
+           The horizontal underlines survive because text-decoration uses explicit
           colors (#ef4444, etc.) NOT currentColor.
           The background highlights survive because they also use explicit rgba().
           
@@ -258,9 +344,17 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
           {renderHighlightedText()}
         </div>
 
-        {/* LAYER 3 (HIGHEST): Floating Suggestion Card */}
-        {activeSuggestion && (
-          <div className="z-50 pointer-events-auto" style={{ position: 'relative' }}>
+      </div>
+
+      {/* LAYER 3 (HIGHEST): Floating Suggestion Card — portalled to
+          document.body with position:fixed so it renders OUTSIDE the
+          overflow-hidden editor container and is never clipped. */}
+      {activeSuggestion &&
+        createPortal(
+          <div
+            className="fixed z-[80] pointer-events-auto"
+            style={{ top: `${cardPosition.top}px`, left: `${cardPosition.left}px` }}
+          >
             <SuggestionCard
               suggestion={activeSuggestion}
               currentIndex={activeIndex}
@@ -268,13 +362,23 @@ export const WritelyEditor: React.FC<WritelyEditorProps> = ({
               onAccept={onAcceptSuggestion}
               onDismiss={onDismissSuggestion}
               onAddToDictionary={onAddToDictionary}
-              position={cardPosition}
               onMouseEnter={handleCardMouseEnter}
               onMouseLeave={handleCardMouseLeave}
             />
-          </div>
+          </div>,
+          document.body
         )}
-      </div>
+
+      {/* Selection pill + rich popup (Grammarly-style, portalled outside container) */}
+      {textSelection && (
+        <SelectionAssistant
+          textareaRef={textareaRef}
+          fullText={text}
+          selection={textSelection}
+          onApply={handleApplySelection}
+          onClose={() => setTextSelection(null)}
+        />
+      )}
     </div>
   );
 };

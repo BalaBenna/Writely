@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppSidebar, NavScreen } from './components/Sidebar/AppSidebar';
 import { WritelyEditor } from './components/Editor/WritelyEditor';
-import { IssuesPanel } from './components/Sidebar/IssuesPanel';
-import { DocumentStats } from './components/Sidebar/DocumentStats';
 import { ModelCatalog } from './components/Models/ModelCatalog';
 import { DictionaryView } from './components/Dictionary/DictionaryView';
 import { HistoryView } from './components/History/HistoryView';
@@ -21,6 +19,9 @@ import { Suggestion, DocumentMetrics, EngineTelemetry, WritingGoals, DEFAULT_GOA
 import { GoalsBar } from './components/Goals/GoalsBar';
 import { loadSnippets, expandSnippets } from './engine/styleGuide';
 import { OnboardingWizard, hasCompletedOnboarding } from './components/Onboarding/OnboardingWizard';
+import { SystemOverlay } from './components/System/SystemOverlay';
+import { cloudManager } from './engine/cloudProviders';
+import { runAssistantTab, reviseWithInstruction, AssistantTab } from './engine/selectionAssistant';
 
 const INITIAL_TEXT = `He go to the store yesterday and bought three apple . Their are many reasons why this is a bad idea , due to the fact that he don't have no money . We is hoping that you can fix this asap .
 
@@ -66,13 +67,15 @@ export const App: React.FC = () => {
     try { localStorage.setItem('writely_goals', JSON.stringify(goals)); } catch {}
   }, [goals]);
 
-  // Persistent Theme State
+  // Persistent Theme State — default to LIGHT on first open/download;
+  // only honour an explicit saved preference afterwards.
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('writely_theme');
-      if (saved) return saved === 'dark';
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
     }
-    return true;
+    return false;
   });
 
   useEffect(() => {
@@ -92,19 +95,25 @@ export const App: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Modals + Onboarding
+  // Modals + Setup flow (user-activated, never auto-popup)
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [isModelsModalOpen, setIsModelsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRewriteOpen, setIsRewriteOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  // First-run gate: the app stays behind full-screen setup until onboarding
+  // completes (permissions seen + explicitly opted in or skipped by choice).
+  const [onboarded, setOnboarded] = useState(() => hasCompletedOnboarding());
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (!hasCompletedOnboarding()) setIsOnboardingOpen(true);
-    }, 600);
-    return () => clearTimeout(t);
-  }, []);
+  const openSetup = (step = 0) => {
+    setOnboardingStep(step);
+    setIsOnboardingOpen(true);
+  };
+  const closeSetup = () => {
+    setIsOnboardingOpen(false);
+    setOnboarded(hasCompletedOnboarding());
+  };
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -134,6 +143,85 @@ export const App: React.FC = () => {
   useEffect(() => {
     runAnalysis(text);
   }, [runAnalysis]); // runs on mount and whenever goals change (runAnalysis identity changes)
+
+  // System-wide pipeline: Main captures selected text from ANY app
+  // (global hotkey ⌘/Ctrl+Shift+G) and asks the renderer to correct it
+  // with the user's selected engine (local offline or cloud BYOK).
+  useEffect(() => {
+    const api = (window as any).writelySystem;
+    if (!api?.onSystemCorrect) return;
+    return api.onSystemCorrect(async (job: { original: string }) => {
+      try {
+        const input = String(job?.original || '');
+        if (!input.trim()) {
+          api.sendSystemResult({ corrected: input, count: 0, suggestions: [] });
+          return;
+        }
+        const active = cloudManager.getActiveModelId();
+        // Cloud engine (user's own key + selected model)
+        if (active && active !== 'local' && active !== 'custom') {
+          try {
+            const g = await cloudManager.executeCloudGrammar(input, active);
+            if (g.corrected && g.corrected !== input) {
+              api.sendSystemResult({
+                corrected: g.corrected,
+                count: 1,
+                suggestions: [{ original: input.slice(0, 120), replacement: g.corrected.slice(0, 120), explanation: `Corrected via ${g.providerUsed}`, type: 'grammar' }],
+                providerUsed: g.providerUsed,
+              });
+              return;
+            }
+          } catch (_) {
+            // fall through to local engine
+          }
+        }
+        if (active === 'custom' && cloudManager.getCustomEndpoint().enabled) {
+          try {
+            const r = await cloudManager.executeCustomRewrite(input, 'professional');
+            if (r.rewritten && r.rewritten !== input) {
+              api.sendSystemResult({
+                corrected: r.rewritten,
+                count: 1,
+                suggestions: [{ original: input.slice(0, 120), replacement: r.rewritten.slice(0, 120), explanation: `Via ${r.providerUsed}`, type: 'grammar' }],
+                providerUsed: r.providerUsed,
+              });
+              return;
+            }
+          } catch (_) {}
+        }
+        // Local offline engine (default): same rule pipeline as the editor
+        let savedGoals = DEFAULT_GOALS;
+        try {
+          const s = localStorage.getItem('writely_goals');
+          if (s) savedGoals = JSON.parse(s);
+        } catch (_) {}
+        const result = analyzeDocument(input, savedGoals);
+        const sorted = [...result.suggestions].sort((a, b) => b.start - a.start);
+        let corrected = input;
+        for (const s of sorted) {
+          const slice = corrected.substring(s.start, s.end);
+          if (slice === s.original) {
+            corrected = corrected.substring(0, s.start) + s.replacement + corrected.substring(s.end);
+          } else {
+            const idx = corrected.indexOf(s.original);
+            if (idx !== -1) corrected = corrected.substring(0, idx) + s.replacement + corrected.substring(idx + s.original.length);
+          }
+        }
+        api.sendSystemResult({
+          corrected,
+          count: result.suggestions.length,
+          suggestions: result.suggestions.slice(0, 8).map((s) => ({
+            original: s.original,
+            replacement: s.replacement,
+            explanation: s.explanation,
+            type: s.type,
+          })),
+        });
+      } catch (e: any) {
+        api.sendSystemResult({ error: e?.message || 'correction failed' });
+      }
+    });
+  }, []);
 
   // Accept a single suggestion — clears debounce to prevent stale re-analysis
   const handleAcceptSuggestion = (s: Suggestion) => {
@@ -225,6 +313,50 @@ export const App: React.FC = () => {
     runAnalysis(rewritten);
   };
 
+  // Overlay tab rewrites: the system-wide popup asks the renderer to
+  // re-run a tab (tone) on the captured text via the shared assistant engine.
+  useEffect(() => {
+    const api = (window as any).writelySystem;
+    if (!api?.onSystemRewrite) return;
+    return api.onSystemRewrite(async (req: { id: number; text: string; tone: AssistantTab; instruction?: string; targetLang?: string }) => {
+      try {
+        const r = req?.instruction
+          ? await reviseWithInstruction(String(req?.text || ''), req.instruction)
+          : await runAssistantTab(String(req?.text || ''), (req?.tone as AssistantTab) || 'improve', req?.targetLang);
+        api.sendSystemRewriteDone({ id: req?.id, ...r });
+      } catch (e: any) {
+        api.sendSystemRewriteDone({ id: req?.id, error: e?.message || 'rewrite failed' });
+      }
+    });
+  }, []);
+
+  // Overlay-popup mode: the frameless system-wide window loads the same
+  // bundle with #system-overlay and renders ONLY the popup (no editor).
+  if (typeof window !== 'undefined' && window.location.hash === '#system-overlay') {
+    return <SystemOverlay />;
+  }
+
+  // First-run gate: full-screen permissions-first setup. The app appears
+  // only after onboarding completes — permissions can no longer be skipped unseen.
+  if (!onboarded) {
+    return (
+      <OnboardingWizard
+        isOpen
+        initialStep={1}
+        forced
+        onClose={closeSetup}
+        onGoToModels={() => {
+          closeSetup();
+          setCurrentScreen('models');
+        }}
+        onGoToEditor={() => {
+          closeSetup();
+          setCurrentScreen('editor');
+        }}
+      />
+    );
+  }
+
   return (
     <div className={`h-screen flex overflow-hidden transition-colors duration-200 ${isDark ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-100 text-slate-900'}`}>
       {/* VoiceInk-style Native Desktop Sidebar */}
@@ -234,7 +366,7 @@ export const App: React.FC = () => {
         onOpenDownload={() => setIsDownloadOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenRewrite={() => setIsRewriteOpen(true)}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenOnboarding={() => openSetup(0)}
         isDark={isDark}
         toggleTheme={toggleTheme}
       />
@@ -246,17 +378,9 @@ export const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           {currentScreen === 'editor' && (
             <div className="max-w-7xl h-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-              {/* Left/Center: Interactive Writing Canvas */}
-              <div className="lg:col-span-8 flex flex-col min-h-[550px] space-y-4">
+              {/* Full-width: Interactive Writing Canvas */}
+              <div className="lg:col-span-12 flex flex-col min-h-[550px] space-y-4">
                 <GoalsBar goals={goals} onChange={setGoals} />
-                {telemetry.tone && (
-                  <div className="flex items-center gap-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2">
-                    <span className="text-base">{telemetry.tone.emoji}</span>
-                    <span className="text-slate-900 dark:text-slate-200 font-medium">{telemetry.tone.overall}</span>
-                    <span className="text-slate-500 dark:text-slate-400">— {telemetry.tone.description}</span>
-                    <span className="ml-auto text-[11px] text-slate-500">{telemetry.tone.scores.formal ?? 0}% formal • {telemetry.tone.scores.confident ?? 0}% confident</span>
-                  </div>
-                )}
                 <WritelyEditor
                   text={text}
                   onChange={handleTextChange}
@@ -270,19 +394,6 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              {/* Right: Sidebar with Suggestions & Analytics */}
-              <div className="lg:col-span-4 flex flex-col space-y-5">
-                <div className="flex-1 min-h-[320px]">
-                  <IssuesPanel
-                    suggestions={suggestions}
-                    onSelectSuggestion={(id) => setActiveSuggestionId(id)}
-                    onAcceptSuggestion={handleAcceptSuggestion}
-                    activeSuggestionId={activeSuggestionId}
-                  />
-                </div>
-
-                <DocumentStats metrics={metrics} />
-              </div>
             </div>
           )}
 
@@ -347,6 +458,10 @@ export const App: React.FC = () => {
       <DownloadModal
         isOpen={isDownloadOpen}
         onClose={() => setIsDownloadOpen(false)}
+        onStartSetup={(step) => {
+          setIsDownloadOpen(false);
+          openSetup(step);
+        }}
       />
 
       <ModelManagerModal
@@ -371,9 +486,10 @@ export const App: React.FC = () => {
 
       <OnboardingWizard
         isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onGoToModels={() => { setIsOnboardingOpen(false); setCurrentScreen('models'); }}
-        onGoToEditor={() => { setIsOnboardingOpen(false); setCurrentScreen('editor'); }}
+        initialStep={onboardingStep}
+        onClose={closeSetup}
+        onGoToModels={() => { closeSetup(); setCurrentScreen('models'); }}
+        onGoToEditor={() => { closeSetup(); setCurrentScreen('editor'); }}
       />
     </div>
   );

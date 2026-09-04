@@ -12,6 +12,22 @@ interface GrammarRule {
   formality?: string[];
 }
 
+// Common countable nouns for noun-number rules (singular → plural)
+const COUNTABLE_SINGULAR_TO_PLURAL: Record<string, string> = {
+  apple: 'apples', reason: 'reasons', member: 'members', car: 'cars',
+  problem: 'problems', day: 'days', year: 'years', thing: 'things',
+  book: 'books', idea: 'ideas', meeting: 'meetings', email: 'emails',
+  student: 'students', employee: 'employees', mile: 'miles', dollar: 'dollars',
+  hour: 'hours', minute: 'minutes', week: 'weeks', month: 'months',
+  point: 'points', step: 'steps', part: 'parts', way: 'ways',
+  phone: 'phones', computer: 'computers', file: 'files', word: 'words',
+  page: 'pages', photo: 'photos', bottle: 'bottles', box: 'boxes',
+  child: 'children', man: 'men', woman: 'women', person: 'people',
+};
+const PLURAL_TO_SINGULAR: Record<string, string> = Object.fromEntries(
+  Object.entries(COUNTABLE_SINGULAR_TO_PLURAL).map(([s, p]) => [p, s])
+);
+
 const GRAMMAR_RULES: GrammarRule[] = [
   // 1. Subject-Verb Agreement
   {
@@ -516,6 +532,118 @@ const GRAMMAR_RULES: GrammarRule[] = [
     replacement: 'between you and me',
     explanation: 'Use object pronoun after preposition: "between you and me".',
     confidence: 0.94,
+  },
+
+  // 8. More Verb Forms (subject-verb + tense)
+  {
+    id: 'SVA_HE_WERE',
+    pattern: /\b(he|she|it)\s+were\b/i,
+    type: 'grammar',
+    replacement: (_match, subj) => `${subj} was`,
+    explanation: 'Singular subjects take "was", not "were".',
+    confidence: 0.97,
+  },
+  {
+    id: 'SVA_DOESNT_HAS',
+    pattern: /\b(he|she|it)\s+doesn'?t\s+has\b/i,
+    type: 'grammar',
+    replacement: (_match, subj) => `${subj} doesn't have`,
+    explanation: 'After "doesn\'t", use the base form "have".',
+    confidence: 0.98,
+  },
+  {
+    id: 'SVA_DONT_HAS',
+    pattern: /\b(they|we|you|i)\s+don'?t\s+has\b/i,
+    type: 'grammar',
+    replacement: (_match, subj) => `${subj} don't have`,
+    explanation: 'After "don\'t", use the base form "have".',
+    confidence: 0.98,
+  },
+  {
+    id: 'TENSE_DIDNT_PAST',
+    pattern: /\bdidn'?t\s+(went|saw|ate|took|came|did|had|got|made|said|wrote|broke|chose|drove|spoke|bought|thought|knew)\b/i,
+    type: 'grammar',
+    replacement: (_match, past) => {
+      const base: Record<string, string> = {
+        went: 'go', saw: 'see', ate: 'eat', took: 'take', came: 'come', did: 'do',
+        had: 'have', got: 'get', made: 'make', said: 'say', wrote: 'write',
+        broke: 'break', chose: 'choose', drove: 'drive', spoke: 'speak',
+        bought: 'buy', thought: 'think', knew: 'know',
+      };
+      return `didn't ${base[past.toLowerCase()] || past}`;
+    },
+    explanation: 'After "didn\'t", use the base verb form ("didn\'t go", not "didn\'t went").',
+    confidence: 0.97,
+  },
+  {
+    id: 'TENSE_HAVE_WENT',
+    pattern: /\b(have|has)\s+went\b/i,
+    type: 'grammar',
+    replacement: (_match, aux) => `${aux} gone`,
+    explanation: 'Use the past participle after "have/has": "have gone".',
+    confidence: 0.97,
+  },
+  {
+    id: 'THERE_IS_MANY',
+    pattern: /\bthere\s+is\s+(many|several|few|multiple|numerous)\b/i,
+    type: 'grammar',
+    replacement: (_match, qty) => `there are ${qty}`,
+    explanation: 'Plural quantifiers take "there are", not "there is".',
+    confidence: 0.96,
+  },
+  {
+    id: 'CONFUSED_THEIR_GOING',
+    pattern: /\btheir\s+(going|coming|leaving|working)\b/i,
+    type: 'grammar',
+    replacement: (_match, verb) => `they're ${verb}`,
+    explanation: 'Use the contraction "they\'re" (they are) before a verb.',
+    confidence: 0.9,
+  },
+
+  // 9. Noun Number (plural nouns after counts/quantifiers, a + plural, much/less)
+  {
+    id: 'NOUN_NUM_SINGULAR',
+    pattern: new RegExp(
+      '\\b(two|three|four|five|six|seven|eight|nine|ten|many|several|few|multiple|numerous|both|these|those|various)\\s+(' +
+        Object.keys(COUNTABLE_SINGULAR_TO_PLURAL).join('|') +
+        ')\\b',
+      'i'
+    ),
+    type: 'grammar',
+    replacement: (_match, qty, noun) => `${qty} ${COUNTABLE_SINGULAR_TO_PLURAL[noun.toLowerCase()] || noun}`,
+    explanation: 'Countable nouns after a number or plural quantifier must be plural.',
+    confidence: 0.95,
+  },
+  {
+    id: 'NOUN_A_PLURAL',
+    pattern: new RegExp(
+      '\\ba\\s+(' + Object.values(COUNTABLE_SINGULAR_TO_PLURAL).join('|') + ')\\b',
+      'i'
+    ),
+    type: 'grammar',
+    replacement: (_match, plural) => {
+      const singular = PLURAL_TO_SINGULAR[plural.toLowerCase()] || plural;
+      const article = /^[aeiou]/i.test(singular) ? 'an' : 'a';
+      return `${article} ${singular}`;
+    },
+    explanation: '"A/an" takes a singular noun.',
+    confidence: 0.95,
+  },
+  {
+    id: 'NOUN_MUCH_COUNTABLE',
+    pattern: /\bmuch\s+(problems|reasons|people|things|ideas|cars|members|apples|days|years|meetings|emails|students)\b/i,
+    type: 'grammar',
+    replacement: (_match, noun) => `many ${noun}`,
+    explanation: 'Use "many" with countable nouns ("many problems", not "much problems").',
+    confidence: 0.96,
+  },
+  {
+    id: 'NOUN_LESS_COUNTABLE',
+    pattern: /\bless\s+(problems|reasons|people|things|members|cars|meetings|apples|students)\b/i,
+    type: 'grammar',
+    replacement: (_match, noun) => `fewer ${noun}`,
+    explanation: 'Use "fewer" with countable nouns ("fewer reasons", not "less reasons").',
+    confidence: 0.95,
   },
 ];
 

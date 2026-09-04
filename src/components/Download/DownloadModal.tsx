@@ -4,14 +4,27 @@ import { X, Download, Apple, Monitor, Terminal, Check, ExternalLink, ShieldCheck
 interface DownloadModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onStartSetup?: (step: number) => void;
 }
 
-export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose }) => {
+type DesktopOS = 'mac' | 'windows' | 'other';
+
+function detectDesktopOS(): DesktopOS {
+  if (typeof navigator === 'undefined') return 'other';
+  const ua = navigator.userAgent.toLowerCase();
+  const p = ((navigator as any).userAgentData?.platform?.toLowerCase() || navigator.platform.toLowerCase());
+  if (p.includes('mac') || ua.includes('mac')) return 'mac';
+  if (p.includes('win') || ua.includes('win')) return 'windows';
+  return 'other';
+}
+
+export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, onStartSetup }) => {
   const [copiedMac, setCopiedMac] = useState(false);
   const [copiedWin, setCopiedWin] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState<string | null>(null);
   const [assets, setAssets] = useState<{ name: string; url: string; size: number }[] | null>(null);
   const [assetsError, setAssetsError] = useState(false);
+  const [myOS] = useState<DesktopOS>(() => detectDesktopOS());
 
   useEffect(() => {
     if (!isOpen || assets !== null) return;
@@ -79,18 +92,44 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
           </button>
         </div>
 
-        {/* Download Notice */}
+        {/* Download Notice + OS-specific activation */}
         {downloadStarted && (
-          <div className="p-3 mb-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="p-4 mb-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-sky-50 dark:from-emerald-500/10 dark:to-sky-500/10 border border-emerald-300 dark:border-emerald-500/30 animate-in fade-in">
+            <div className="flex items-center space-x-2 text-emerald-800 dark:text-emerald-300 text-xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
                 Preparing <strong>Writely ({downloadStarted === 'mac' ? 'macOS Universal .DMG' : 'Windows Setup .EXE'})</strong> — fetching latest release…
               </span>
+              <span className="ml-auto font-mono text-[10px] bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded font-bold shrink-0">
+                ~12.4 MB
+              </span>
             </div>
-            <span className="font-mono text-[10px] bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded font-bold">
-              ~12.4 MB
-            </span>
+            <div className="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-500/20">
+              <div className="text-xs font-bold text-slate-900 dark:text-white">
+                {downloadStarted === 'mac'
+                  ? 'Next: install the .DMG, then activate system-wide fixes'
+                  : 'Next: run the installer, then activate system-wide fixes'}
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                {downloadStarted === 'mac'
+                  ? 'macOS will ask for Accessibility + Input Monitoring (one-time) so ⌘⇧G works in every app.'
+                  : 'No special permission on Windows — Ctrl+Shift+G works right after install.'}
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <button
+                  onClick={() => onStartSetup?.(1)}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
+                >
+                  {downloadStarted === 'mac' ? 'Activate for Mac' : 'Activate for Windows'}
+                </button>
+                <button
+                  onClick={() => onStartSetup?.(0)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/15 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-white/5 transition-colors"
+                >
+                  Full setup tour
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -111,8 +150,13 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-white/5">
-                  Universal .DMG
+                <span className="flex flex-col items-end gap-1">
+                  {myOS === 'mac' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold">Your device</span>
+                  )}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-white/5">
+                    Universal .DMG
+                  </span>
                 </span>
               </div>
 
@@ -162,8 +206,13 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose })
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-white/5">
-                  NSIS .EXE / .MSIX
+                <span className="flex flex-col items-end gap-1">
+                  {myOS === 'windows' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold">Your device</span>
+                  )}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-white/5">
+                    NSIS .EXE / .MSIX
+                  </span>
                 </span>
               </div>
 

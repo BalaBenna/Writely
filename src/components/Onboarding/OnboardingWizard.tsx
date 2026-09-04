@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, ShieldCheck, Cpu, Download, Settings2, BookOpen, Zap, Apple, Monitor, Globe, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import {
+  X, Feather, ShieldCheck, Cpu, Download, Zap, Apple, Monitor, Globe,
+  ChevronRight, ChevronLeft, Check, Keyboard, BellOff, RefreshCw, Lock, Eye,
+} from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
+  initialStep?: number;
+  // Forced gate (first run): no X / Skip — user must finish setup
+  forced?: boolean;
   onClose: () => void;
   onGoToModels?: () => void;
   onGoToEditor?: () => void;
@@ -16,7 +22,6 @@ function detectPlatform(): Platform {
   const platform = (navigator as any).userAgentData?.platform?.toLowerCase() || navigator.platform.toLowerCase();
   if (platform.includes('mac') || ua.includes('mac')) return 'mac';
   if (platform.includes('win') || ua.includes('win')) return 'windows';
-  // Tauri desktop also reports platform via UA; fallback to web
   return 'web';
 }
 
@@ -29,192 +34,387 @@ export const markOnboardingComplete = () => {
   try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
 };
 
-export const OnboardingWizard: React.FC<Props> = ({ isOpen, onClose, onGoToModels, onGoToEditor }) => {
-  const [step, setStep] = useState(0);
+type A11yState = 'checking' | 'granted' | 'needed' | 'unavailable';
+
+const STEPS = ['Welcome', 'Permissions', 'Models', 'Try it'];
+
+export const OnboardingWizard: React.FC<Props> = ({ isOpen, initialStep = 0, forced = false, onClose, onGoToModels, onGoToEditor }) => {
+  const [step, setStep] = useState(initialStep);
   const [platform, setPlatform] = useState<Platform>('web');
+  const [a11y, setA11y] = useState<A11yState>('checking');
+  // Explicit opt-in for system-wide fixes — OFF by default, never assumed
+  const [optIn, setOptIn] = useState(false);
 
   useEffect(() => { setPlatform(detectPlatform()); }, []);
-  useEffect(() => { if (isOpen) setStep(0); }, [isOpen]);
+  useEffect(() => { if (isOpen) setStep(Math.min(Math.max(0, initialStep), STEPS.length - 1)); }, [isOpen, initialStep]);
+
+  const checkPermissions = async () => {
+    setA11y('checking');
+    try {
+      const api = (window as any).writelyCapture;
+      if (!api?.checkAccessibility) {
+        setA11y('unavailable');
+        return;
+      }
+      const res = await api.checkAccessibility();
+      setA11y(res?.granted ? 'granted' : 'needed');
+    } catch {
+      setA11y('needed');
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && step === 1) {
+      // Load current opt-in (default OFF on fresh installs) + check access
+      (window as any).writelySystem
+        ?.getSystemOptIn?.()
+        .then((v: boolean) => setOptIn(!!v))
+        .catch(() => setOptIn(false));
+      checkPermissions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, step]);
+
+  const handleOptIn = async (enabled: boolean) => {
+    setOptIn(enabled);
+    try {
+      await (window as any).writelySystem?.setSystemOptIn?.(enabled);
+    } catch (_) {}
+    if (enabled) checkPermissions();
+  };
 
   if (!isOpen) return null;
 
-  const totalSteps = 6;
+  const totalSteps = STEPS.length;
 
   const handleNext = () => {
-    if (step < totalSteps - 1) setStep(s => s + 1);
-    else { markOnboardingComplete(); onClose(); }
+    if (step < totalSteps - 1) setStep((s) => s + 1);
+    else {
+      markOnboardingComplete();
+      onClose();
+    }
   };
-  const handleSkip = () => { markOnboardingComplete(); onClose(); };
-  const handleBack = () => setStep(s => Math.max(0, s - 1));
+  const handleSkip = () => {
+    markOnboardingComplete();
+    onClose();
+  };
+  const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
   const PlatformIcon = platform === 'mac' ? Apple : platform === 'windows' ? Monitor : Globe;
 
+  // Full-bleed setup page: header, flowing content, and a footer bar
+  // docked to the page itself — no floating cards, no detached pill bars.
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header progress */}
-        <div className="px-6 pt-5 pb-3 border-b border-slate-200 dark:border-white/10 shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow">
-                <Sparkles className="w-4 h-4 text-white" />
+    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-50 dark:bg-slate-950 animate-in fade-in duration-150">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-violet-500/10 dark:from-blue-500/20 dark:via-indigo-500/15 dark:to-violet-500/20" />
+
+      {/* Header — full-width band */}
+      <div className="relative shrink-0 border-b border-slate-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-950/60 backdrop-blur">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-600/25">
+                <Feather className="w-5 h-5 text-white" strokeWidth={2.2} />
               </div>
               <div>
-                <div className="text-sm font-bold text-slate-900 dark:text-white">Welcome to Writely</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><PlatformIcon className="w-3 h-3" />{platform === 'mac' ? 'macOS • Apple Silicon & Intel' : platform === 'windows' ? 'Windows 10/11 • DirectML/Vulkan' : 'Web • PWA offline-ready'}</div>
+                <div className="text-[15px] font-bold text-slate-900 dark:text-white tracking-tight">Welcome to Writely</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <PlatformIcon className="w-3 h-3" />
+                  {platform === 'mac' ? 'macOS' : platform === 'windows' ? 'Windows 10 / 11' : 'Web demo'}
+                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                  <span>Step {step + 1} of {totalSteps} — {STEPS[step]}</span>
+                </div>
               </div>
             </div>
-            <button onClick={handleSkip} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"><X className="w-5 h-5" /></button>
+            {!forced && (
+              <button
+                onClick={handleSkip}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                title="Skip tour"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i === step ? 'bg-indigo-600' : i < step ? 'bg-indigo-300 dark:bg-indigo-500/50' : 'bg-slate-200 dark:bg-white/10'}`} />
+          {/* Dots */}
+          <div className="flex items-center gap-1.5 mt-4">
+            {STEPS.map((label, i) => (
+              <button
+                key={label}
+                onClick={() => i <= step && setStep(i)}
+                title={label}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === step ? 'w-8 bg-blue-600' : i < step ? 'w-4 bg-blue-300 dark:bg-blue-500/60' : 'w-4 bg-slate-200 dark:bg-white/10'
+                }`}
+              />
             ))}
-            <span className="ml-2 text-[11px] font-mono text-slate-500">{step + 1}/{totalSteps}</span>
           </div>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+      {/* Content — flows full-width, no card */}
+      <div className="relative flex-1 overflow-y-auto">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+          {/* STEP 0 — Welcome */}
           {step === 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Your private Grammarly alternative</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Writely runs <strong className="text-slate-900 dark:text-white">100% offline</strong> — no keystrokes leave your device. <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium"><ShieldCheck className="w-3 h-3" />0% telemetry</span> vs Grammarly’s 300–500ms cloud round-trip.
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center"><Zap className="w-5 h-5 mx-auto text-amber-500 mb-1" /><div className="text-xs font-semibold">12–25ms</div><div className="text-[11px] text-slate-500">realtime</div></div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center"><ShieldCheck className="w-5 h-5 mx-auto text-emerald-500 mb-1" /><div className="text-xs font-semibold">100% offline</div><div className="text-[11px] text-slate-500">private</div></div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 text-center"><BookOpen className="w-5 h-5 mx-auto text-indigo-500 mb-1" /><div className="text-xs font-semibold">Apache 2.0</div><div className="text-[11px] text-slate-500">free forever</div></div>
+            <div className="space-y-5 pt-1">
+              <div>
+                <h2 className="text-[22px] font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+                  Write anywhere.
+                  <br />
+                  Fix everywhere.
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                  Select text in any app, press{' '}
+                  <kbd className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 font-mono text-xs font-semibold">
+                    ⌘⇧G
+                  </kbd>{' '}
+                  and Writely fixes it on the spot — <strong className="text-slate-900 dark:text-white">100% on-device</strong>, zero telemetry.
+                </p>
               </div>
-              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-xs text-indigo-900 dark:text-indigo-200">
-                <strong>How you’ll use it:</strong> Type in the editor → wavy underlines appear in &lt;50ms → click to fix → Fix All → tone rewrite → plagiarism/citations — all local.
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  { icon: Keyboard, tint: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', title: '⌘⇧G anywhere', sub: 'system-wide' },
+                  { icon: Zap, tint: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10', title: '<50ms', sub: 'realtime' },
+                  { icon: ShieldCheck, tint: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', title: 'Offline', sub: 'Apache 2.0' },
+                ].map((c) => (
+                  <div key={c.title} className="p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 text-center">
+                    <div className={`w-8 h-8 mx-auto rounded-xl ${c.bg} flex items-center justify-center mb-1.5`}>
+                      <c.icon className={`w-4 h-4 ${c.tint}`} />
+                    </div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">{c.title}</div>
+                    <div className="text-[11px] text-slate-500">{c.sub}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-950 text-slate-200 font-mono text-[11px] overflow-x-auto whitespace-nowrap">
+                <span>select</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-emerald-400">⌘⇧G</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-amber-300">correct</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-sky-300">popup</span>
+                <span className="text-slate-500">→</span>
+                <span className="text-violet-300">Insert</span>
               </div>
             </div>
           )}
 
+          {/* STEP 1 — Permissions (clean + cool) */}
           {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Cpu className="w-5 h-5 text-indigo-600" />How Writely works</h2>
-              <div className="space-y-2 font-mono text-xs bg-slate-950 text-slate-200 p-4 rounded-xl border border-slate-800">
-                <div>Keystroke → <span className="text-emerald-400">FNV-1a Cache &lt;0.2ms</span> → <span className="text-amber-400">SymSpell &lt;2ms</span> → <span className="text-violet-400">GECToR Tagger &lt;15ms</span> → <span className="text-sky-400">Local LLM &lt;120ms</span></div>
-                <div className="text-slate-500">All on-device. No network. Cache hit = 0ms.</div>
+            <div className="pt-1">
+              <div className="relative overflow-hidden rounded-3xl border border-indigo-200/60 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-sky-500/10 to-emerald-500/10 dark:from-indigo-500/20 dark:via-sky-500/10 dark:to-emerald-500/15 p-5">
+                <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-indigo-400/30 to-sky-400/20 blur-2xl" />
+                <div className="pointer-events-none absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-gradient-to-tr from-emerald-400/25 to-sky-400/15 blur-2xl" />
+                <div className="relative">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-white/80 dark:bg-white/10 backdrop-blur border border-white/60 dark:border-white/15 shadow-sm flex items-center justify-center">
+                      <Lock className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
+                    </div>
+                    <div>
+                      <h2 className="text-[17px] font-bold text-slate-900 dark:text-white tracking-tight">One permission, fully private</h2>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">Writely reads only your selected text — it never leaves this device.</p>
+                    </div>
+                  </div>
+
+                  {/* Explicit opt-in switch — system-wide stays OFF until tapped */}
+                  {platform !== 'web' && (
+                    <button
+                      onClick={() => handleOptIn(!optIn)}
+                      className="mt-4 w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900 dark:bg-white text-left shadow-lg transition-all active:scale-[0.99]"
+                      aria-pressed={optIn}
+                    >
+                      <span
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0 ${
+                          optIn ? 'bg-emerald-500' : 'bg-white/20 dark:bg-slate-900/20'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                            optIn ? 'translate-x-5' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-white dark:text-slate-900">
+                          {optIn ? 'System-wide fixes: ON' : 'Enable system-wide fixes'}
+                        </span>
+                        <span className="block text-[11px] text-white/70 dark:text-slate-600 leading-snug">
+                          {optIn
+                            ? 'Writely may read text you select in other apps, only when you press ⌘⇧G.'
+                            : 'Opt in to let ⌘⇧G fix selected text in any app. Off by default.'}
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Live status */}
+                  <div className="mt-3 flex items-center gap-2.5 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10">
+                    {a11y === 'checking' ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
+                        <span className="text-xs text-slate-600 dark:text-slate-300">Checking system access…</span>
+                      </>
+                    ) : a11y === 'granted' ? (
+                      <>
+                        <span className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        </span>
+                        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                          {optIn ? 'All set — system-wide fixes are enabled.' : 'OS permission granted — opt in above to switch on.'}
+                        </span>
+                      </>
+                    ) : a11y === 'unavailable' ? (
+                      <>
+                        <Eye className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-xs text-slate-600 dark:text-slate-300">Desktop app only — the web demo needs no permissions.</span>
+                      </>
+                    ) : (
+                      <>
+                        <BellOff className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span className="text-xs text-slate-700 dark:text-slate-200">Permission needed for fixes outside this app.</span>
+                        <button
+                          onClick={checkPermissions}
+                          className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-semibold hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors shrink-0"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Check again
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Platform cards */}
+                  {platform === 'mac' && (
+                    <div className="mt-3 grid gap-2">
+                      {[
+                        { n: '1', title: 'Accessibility', desc: 'System Settings → Privacy & Security → Accessibility → enable Writely', tag: 'For ⌘⇧G capture' },
+                        { n: '2', title: 'Input Monitoring', desc: 'Same page → Input Monitoring → enable Writely', tag: 'For global hotkey' },
+                      ].map((c) => (
+                        <div
+                          key={c.n}
+                          className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10"
+                        >
+                          <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                            {c.n}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-bold text-slate-900 dark:text-white">
+                              {c.title} <span className="ml-1 font-mono font-medium text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">{c.tag}</span>
+                            </div>
+                            <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{c.desc}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {platform === 'windows' && (
+                    <div className="mt-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Windows needs <strong className="text-slate-900 dark:text-white">no special permission</strong> — install, select text, press{' '}
+                      <kbd className="font-mono px-1 rounded bg-slate-900 text-white text-[10px]">Ctrl+Shift+G</kbd>. If SmartScreen warns on first run: <em>More info → Run anyway</em>.
+                    </div>
+                  )}
+                  {platform === 'web' && (
+                    <div className="mt-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      You're on the <strong className="text-slate-900 dark:text-white">web demo</strong> — nothing to grant. Download the desktop app to unlock system-wide fixes.
+                    </div>
+                  )}
+                </div>
               </div>
-              <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1.5 list-disc pl-5">
-                <li><strong>Editor:</strong> where you’re reading this — try typing “He go” and see the red underline.</li>
-                <li><strong>Extension:</strong> same engine in Gmail/Notion via <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-white/5 font-mono text-xs">ws://127.0.0.1:8765</code> bridge (inline wavy marks, not just badge).</li>
-                <li><strong>Models:</strong> 45 MB GECToR (grammar) + 350 MB Qwen (rewrites) in <code className="font-mono text-xs">~/.writely/models/</code> — download once.</li>
-              </ul>
             </div>
           )}
 
+          {/* STEP 2 — Models */}
           {step === 2 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {platform === 'mac' ? 'macOS permissions — one-time setup' : platform === 'windows' ? 'Windows — no setup needed' : 'Web — no permissions needed'}
-              </h2>
-              {platform === 'mac' && (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">For system-wide overlay (Slack/Word/Figma) and global hotkey <code className="font-mono text-xs px-1 py-0.5 bg-slate-100 dark:bg-white/5 rounded">Cmd+Shift+G</code>, grant:</p>
-                  <div className="space-y-2">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5">
-                      <div className="text-sm font-semibold">1. System Settings → Privacy & Security → Accessibility</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">Enable <strong>Writely</strong> (allows reading the sentence you’re editing — text never leaves your device).</div>
-                    </div>
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5">
-                      <div className="text-sm font-semibold">2. Privacy & Security → Input Monitoring</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400">Required only for global hotkey. Skip if you’ll use only the editor + browser extension.</div>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-900 dark:text-amber-200">
-                    <strong>Privacy copy for the OS dialog:</strong> “Writely reads only the sentence you’re editing to correct locally. No text is sent to any server.” — You can use Writely without these; extension + editor work with zero permissions.
-                  </div>
+            <div className="space-y-4 pt-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center">
+                  <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
                 </div>
-              )}
-              {platform === 'windows' && (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Windows needs <strong>no admin permission</strong>. Writely runs as a normal Tauri app:</p>
-                  <ul className="text-sm text-slate-600 dark:text-slate-400 list-disc pl-5 space-y-1">
-                    <li>Tray icon → Writely runs in background, shows inline suggestions in any app via UI Automation.</li>
-                    <li>SmartScreen may warn on first unsigned build: <em>More info → Run anyway</em> (resolved once EV cert added).</li>
-                    <li>Fallback <strong>CPU SIMD</strong> works even without GPU/NPU — just slower (45–65ms vs 12–25ms).</li>
-                  </ul>
+                <div>
+                  <h2 className="text-[17px] font-bold text-slate-900 dark:text-white tracking-tight">Models — download once, yours forever</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Stored in <code className="font-mono">~/.writely/models/</code> • delete anytime • no account</p>
                 </div>
-              )}
-              {platform === 'web' && (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">You’re on the <strong>web demo</strong> at <a href="https://balabenna.github.io/Writely/" target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">balabenna.github.io/Writely</a> — zero install, PWA caches offline.</p>
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5">
-                    <div className="text-sm font-semibold">To get native speed + extension:</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">Download <strong>.dmg</strong> (macOS) or <strong>.exe</strong> (Windows) from <a href="https://github.com/BalaBenna/Writely/releases/latest" target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline">Releases</a> or click Download above. Or run locally: <code className="font-mono text-xs px-1 py-0.5 bg-slate-100 dark:bg-white/5 rounded">npm i && npm run dev && npm run bridge</code> for the extension.</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Settings2 className="w-5 h-5 text-indigo-600" />Set your writing goals</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Like Grammarly, Writely tailors suggestions to <strong>Audience × Formality × Domain × Intent</strong>.</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5"><div className="font-semibold">Audience</div><div className="text-slate-500">General / Knowledgeable / Expert — adjusts readability.</div></div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5"><div className="font-semibold">Formality</div><div className="text-slate-500">Informal / Neutral / Formal — slang tolerance.</div></div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5"><div className="font-semibold">Domain</div><div className="text-slate-500">Academic (strict, no contractions) / Business / Email / Casual / Creative (permissive).</div></div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5"><div className="font-semibold">Intent</div><div className="text-slate-500">Inform / Describe / Convince / Tell Story.</div></div>
               </div>
-              <p className="text-xs text-slate-500">You can change this anytime above the editor (Goals bar). Try switching to <strong>Academic</strong> — “I think” and contractions will be flagged; <strong>Casual</strong> ignores fragments.</p>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Download className="w-5 h-5 text-indigo-600" />Models — download once, run forever offline</h2>
               <div className="space-y-2">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 flex items-center justify-between">
-                  <div><div className="text-sm font-semibold">GECToR 80M INT8 — 45 MB</div><div className="text-xs text-slate-500">Realtime grammar & spell • 12–25ms • required</div></div>
-                  <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">Included</span>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/5 flex items-center justify-between">
-                  <div><div className="text-sm font-semibold">Qwen 0.5B Q4 — 350 MB</div><div className="text-xs text-slate-500">Tone rewrite & paraphrase • 110–140ms • optional</div></div>
-                  <span className="text-[11px] px-2 py-1 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">Download in Models</span>
-                </div>
+                {[
+                  { name: 'Grammar engine', meta: 'Built-in • <50ms realtime', state: 'Included', hot: true },
+                  { name: 'Writing models (Qwen / Mistral / Llama)', meta: 'Your GGUFs, Ollama or LM Studio — auto-detected', state: 'Auto-detect', hot: false },
+                  { name: 'Cloud providers (optional)', meta: 'OpenRouter, OpenAI, Claude… bring your own key', state: 'BYOK', hot: false },
+                ].map((m) => (
+                  <div key={m.name} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.name}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{m.meta}</div>
+                    </div>
+                    <span
+                      className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full font-semibold ${
+                        m.hot
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300'
+                      }`}
+                    >
+                      {m.state}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-slate-500">Stored in <code className="font-mono text-xs px-1 py-0.5 bg-slate-100 dark:bg-white/5 rounded">~/.writely/models/</code> (or <code className="font-mono">~/Library/Application Support/Writely</code> on Mac). Delete anytime. No account.</p>
-              <button onClick={() => { onGoToModels?.(); }} className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 text-sm font-medium flex items-center justify-center gap-2">
-                <Download className="w-4 h-4" />Open Model Catalog
+              <button
+                onClick={() => onGoToModels?.()}
+                className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <Download className="w-4 h-4" /> Open Model Catalog
               </button>
             </div>
           )}
 
-          {step === 5 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Try it — your turn</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">This text has 7 planted errors. Watch the wavy underlines and <strong>Fix All</strong>.</p>
-              <div className="p-3 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs leading-relaxed border border-slate-800">
-                He go to store yesterday. Their are many reason due to the fact that he don't have no money. In order to help, we is hoping you can fix this asap.
+          {/* STEP 3 — Try it */}
+          {step === 3 && (
+            <div className="space-y-4 pt-1">
+              <h2 className="text-[17px] font-bold text-slate-900 dark:text-white tracking-tight">Try it — your turn</h2>
+              <div className="p-4 rounded-2xl bg-slate-950 text-slate-200 font-mono text-xs leading-relaxed border border-slate-800">
+                He go to store yesterday. Their are many reason due to the fact that he don't have no money.
               </div>
-              <ul className="text-xs text-slate-600 dark:text-slate-400 list-disc pl-5 space-y-1">
-                <li>Hover an underline → see Why → <code className="font-mono">Cmd+Enter</code> to accept, <code className="font-mono">Esc</code> to dismiss.</li>
-                <li>Click <strong>Fix All</strong> (top bar) — applies right-to-left safely.</li>
-                <li>Try <strong>Tone Studio</strong> (Professional / Friendly / Concise) and <strong>/refund</strong> snippet.</li>
+              <ul className="text-[13px] text-slate-600 dark:text-slate-400 space-y-1.5">
+                <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> Hover an underline → a card appears just below it → click to fix (<kbd className="font-mono text-[11px]">⌘↵</kbd>).</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> Select a sentence → blue pill → Improve, Translate, tones, AI chat.</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> Anywhere on your Mac/PC → select text → <kbd className="font-mono text-[11px]">⌘⇧G</kbd> → Insert.</li>
               </ul>
-              <button onClick={() => { onGoToEditor?.(); }} className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2">
-                <Check className="w-4 h-4" />Open Editor & Start Writing
+              <button
+                onClick={() => onGoToEditor?.()}
+                className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all active:scale-[0.99]"
+              >
+                <Check className="w-4 h-4" /> Open Editor & Start Writing
               </button>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Footer nav */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
-          <button onClick={handleBack} disabled={step === 0} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-white/5 flex items-center gap-1.5">
-            <ChevronLeft className="w-4 h-4" />Back
+      {/* Footer — docked page bar attached to the screen flow, not a floating pill */}
+      <div className="relative shrink-0 border-t border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between gap-2">
+          <button
+            onClick={handleBack}
+            disabled={step === 0}
+            className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-1 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
           </button>
+          <div className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+            Step {step + 1} of {totalSteps} — {STEPS[step]}
+          </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleSkip} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Skip</button>
-            <button onClick={handleNext} className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center gap-1.5">
-              {step === totalSteps - 1 ? 'Get Started' : 'Next'}<ChevronRight className="w-4 h-4" />
+            {!forced && (
+              <button onClick={handleSkip} className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                Skip
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all"
+            >
+              {step === totalSteps - 1 ? 'Get Started' : step === 1 ? 'Activate & Continue' : 'Next'} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>

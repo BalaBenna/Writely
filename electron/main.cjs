@@ -1,12 +1,47 @@
-const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain, utilityProcess } = require('electron');
+const { app, BrowserWindow, shell, Tray, Menu, nativeImage, ipcMain, utilityProcess, clipboard, Notification, globalShortcut, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const os = require('os');
+const systemCapture = require('./systemCapture.cjs');
 
 let mainWindow = null;
 let tray = null;
 let llamaProcesses = new Map(); // modelId -> ChildProcess
+let overlayWindow = null; // Grammarly-style system-wide suggestion popup
+let overlayReady = false;
+let pendingOverlayData = null;
+let pendingSystemJob = null; // { original, app, at }
+let overlayJob = null; // { original } — source text for tab rewrites
+let rewriteSeq = 0;
+const pendingRewrites = new Map(); // id -> { resolve, reject }
+
+function notify(title, body) {
+  try { new Notification({ title, body }).show(); } catch (_) {}
+}
+
+// --- Explicit opt-in for system-wide fixes (default OFF) ---
+// Persisted in userData so a fresh install never captures other apps
+// until the user opts in via Complete setup → Permissions → Activate.
+function getOptInPath() {
+  try { return path.join(app.getPath('userData'), 'writely-optin.json'); } catch (_) { return null; }
+}
+function getSystemOptIn() {
+  try {
+    const p = getOptInPath();
+    if (!p || !fs.existsSync(p)) return false;
+    return JSON.parse(fs.readFileSync(p, 'utf8')).systemFixes === true;
+  } catch (_) { return false; }
+}
+function setSystemOptIn(enabled) {
+  try {
+    const p = getOptInPath();
+    if (!p) return false;
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify({ systemFixes: !!enabled, updatedAt: Date.now() }), 'utf8');
+    return !!enabled;
+  } catch (_) { return false; }
+}
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -26,7 +61,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'Writely',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -62,6 +97,7 @@ function createTray() {
     tray = new Tray(img.resize({ width: 16, height: 16 }));
     const menu = Menu.buildFromTemplate([
       { label: 'Show Writely', click: () => mainWindow ? mainWindow.show() : createWindow() },
+      { label: 'Fix selected text (⌘/Ctrl+Shift+G)', click: () => runSystemFix() },
       { type: 'separator' },
       { label: 'Quit', click: () => { for (const p of llamaProcesses.values()) try { p.kill(); } catch {} app.quit(); } },
     ]);
@@ -71,6 +107,121 @@ function createTray() {
   } catch (_) {
     // tray optional on Linux/headless
   }
+}
+
+// --- System-wide overlay popup (Grammarly-style, works in ANY app) ---
+function ensureOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) return overlayWindow;
+  overlayWindow = new BrowserWindow({
+    width: 520,
+    height: 560,
+    show: false,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  overlayReady = false;
+  if (isDev) {
+    overlayWindow.loadURL('http://localhost:5173/#system-overlay');
+  } else {
+    overlayWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'system-overlay' });
+  }
+  overlayWindow.webContents.on('did-finish-load', () => {
+    overlayReady = true;
+    if (pendingOverlayData) {
+      overlayWindow.webContents.send('writely:overlay-data', pendingOverlayData);
+      pendingOverlayData = null;
+    }
+  });
+  overlayWindow.on('closed', () => { overlayWindow = null; overlayReady = false; });
+  try { overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); } catch (_) {}
+  return overlayWindow;
+}
+
+function showSystemOverlay(data) {
+  const win = ensureOverlayWindow();
+  overlayJob = { original: data.original };
+  // Position near the cursor (where the user is writing), clamped to display
+  try {
+    const cursor = screen.getCursorScreenPoint();
+    const display = screen.getDisplayNearestPoint(cursor);
+    const W = 520, H = 560, GAP = 12;
+    const x = Math.max(display.bounds.x + 8, Math.min(cursor.x, display.bounds.x + display.bounds.width - W - 8));
+    let y = cursor.y + GAP;
+    if (y + H > display.bounds.y + display.bounds.height - 8) {
+      y = Math.max(display.bounds.y + 8, cursor.y - H - GAP);
+    }
+    win.setPosition(Math.round(x), Math.round(y));
+  } catch (_) {}
+  if (overlayReady && !win.webContents.isLoading()) {
+    win.webContents.send('writely:overlay-data', data);
+  } else {
+    pendingOverlayData = data;
+  }
+  win.show();
+  try { win.focus(); } catch (_) {}
+}
+
+function hideSystemOverlay() {
+  try { overlayWindow?.hide(); } catch (_) {}
+}
+
+// Global-hotkey pipeline: capture selection anywhere → correct in renderer → popup.
+// Gated behind explicit opt-in: without it we never touch other apps.
+async function runSystemFix() {
+  if (!getSystemOptIn()) {
+    notify('Writely: system-wide fixes are off', 'Open Writely → Complete setup → Permissions → opt in to enable ⌘/Ctrl+Shift+G anywhere.');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try { mainWindow.show(); } catch (_) {}
+    } else {
+      createWindow();
+    }
+    return;
+  }
+  let focused = null;
+  try { focused = await systemCapture.getFocusedApplication(); } catch (_) {}
+  let text = '';
+  try {
+    text = await systemCapture.getSelectedText(clipboard);
+  } catch (e) {
+    console.error('[system] capture failed:', e?.message || e);
+    notify('Writely needs permission', 'Enable Writely in System Settings → Privacy & Security → Accessibility, then select text and press ⌘⇧G again.');
+    return;
+  }
+  if (!text || !text.trim()) {
+    notify('Writely', 'Select some text in any app, then press ⌘/Ctrl+Shift+G to fix it.');
+    return;
+  }
+  if (text.length > 5000) text = text.slice(0, 5000);
+  if (!mainWindow || mainWindow.isDestroyed()) createWindow();
+  pendingSystemJob = { original: text, app: focused?.name || null, at: Date.now() };
+  try {
+    mainWindow.webContents.send('writely:system-correct', pendingSystemJob);
+  } catch (e) {
+    console.error('[system] forward to renderer failed:', e?.message || e);
+    notify('Writely', 'Engine window is not ready — open Writely once, then try again.');
+    pendingSystemJob = null;
+    return;
+  }
+  // Guard: renderer must reply within 10s or we tell the user
+  const jobAt = pendingSystemJob.at;
+  setTimeout(() => {
+    if (pendingSystemJob && pendingSystemJob.at === jobAt) {
+      pendingSystemJob = null;
+      notify('Writely', 'Correction timed out — is the Writely window open?');
+    }
+  }, 10000);
 }
 
 // --- llama.cpp sidecar management (per spec §7) ---
@@ -315,24 +466,116 @@ function setupAIHandlers() {
     console.log('[ai] rewrite stub:', req?.style, req?.text?.slice(0, 60));
     return req?.text || '';
   });
-  ipcMain.handle('writely:getFocusedApplication', async () => null);
-  // Native text capture stubs — platform-specific implementations live in native/macos/*.mm and native/windows/*.cpp
-  // For MVP, these return selected text via clipboard fallback; full AX/UIA comes in Phase 3 (spec §10-11)
+  ipcMain.handle('writely:getFocusedApplication', async () => {
+    try { return await systemCapture.getFocusedApplication(); } catch (_) { return null; }
+  });
+  // OS-level capture — works in ANY app via clipboard fallback (spec §10-11).
+  // Heavy AX/UIA native addons in native/macos + native/windows remain optional future path.
   ipcMain.handle('writely:getSelectedText', async () => {
-    // TODO: replace with native/windows/text_capture.cpp (UI Automation) and native/macos/text_capture.mm (AXUIElement)
-    // For now, renderer handles capture via contenteditable/selection in web context
-    return '';
+    try { return await systemCapture.getSelectedText(clipboard); } catch (e) {
+      console.error('[capture] getSelectedText failed:', e?.message || e);
+      throw e;
+    }
   });
   ipcMain.handle('writely:replaceSelectedText', async (_e, text) => {
-    // TODO: native replace via AXUIElement / UI Automation per spec §10
-    console.log('[capture] replaceSelectedText stub:', text.slice(0, 80));
+    try {
+      await systemCapture.replaceSelectedText(clipboard, String(text || ''));
+    } catch (e) {
+      console.error('[capture] replaceSelectedText failed:', e?.message || e);
+      throw e;
+    }
   });
+  ipcMain.handle('writely:checkAccessibility', async () => {
+    try { return await systemCapture.checkAccessibility(); } catch (e) { return { granted: false, hint: e?.message || 'check failed' }; }
+  });
+  ipcMain.handle('writely:getSystemOptIn', async () => getSystemOptIn());
+  ipcMain.handle('writely:setSystemOptIn', async (_e, enabled) => {
+    const ok = setSystemOptIn(!!enabled);
+    console.log(`[system] opt-in ${ok ? 'ENABLED' : 'DISABLED'} by user`);
+    return ok;
+  });
+  // Renderer → Main: correction result for the pending system-wide job
+  ipcMain.on('writely:system-correct-done', async (_e, res) => {
+    if (!pendingSystemJob) return;
+    const job = pendingSystemJob;
+    pendingSystemJob = null;
+    if (!res || res.error) {
+      console.error('[system] renderer correction error:', res?.error);
+      notify('Writely', 'Could not correct that text.');
+      return;
+    }
+    const count = res.count || 0;
+    if (count === 0 || !res.corrected || res.corrected === job.original) {
+      notify('Writely', job.app ? `Looks good — no issues found in ${job.app}.` : 'Looks good — no issues found.');
+      return;
+    }
+    showSystemOverlay({
+      original: job.original,
+      corrected: res.corrected,
+      suggestions: Array.isArray(res.suggestions) ? res.suggestions.slice(0, 8) : [],
+      count,
+      app: job.app,
+    });
+  });
+  ipcMain.handle('writely:overlay-accept', async (_e, corrected) => {
+    try {
+      await systemCapture.replaceSelectedText(clipboard, String(corrected || ''));
+      hideSystemOverlay();
+      notify('Writely', 'Fix applied where you were writing.');
+      return true;
+    } catch (e) {
+      console.error('[system] overlay accept failed:', e?.message || e);
+      notify('Writely needs permission', 'Could not paste — enable Accessibility permission and try again.');
+      throw e;
+    }
+  });
+  ipcMain.handle('writely:overlay-dismiss', async () => {
+    hideSystemOverlay();
+    return true;
+  });
+  // Overlay → renderer: re-run a tab (Improve/Rephrase/…) on the captured text.
+  // Main bridges the two windows and awaits the renderer's engine result.
+  ipcMain.handle('writely:overlay-rewrite', async (_e, opts) => {
+    const { tone, instruction, base, targetLang } = opts || {};
+    if (!overlayJob?.original && !base) throw new Error('No active suggestion');
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Engine window is not ready');
+    const id = ++rewriteSeq;
+    mainWindow.webContents.send('writely:system-rewrite', { id, text: base || overlayJob.original, tone, instruction, targetLang });
+    return new Promise((resolve, reject) => {
+      pendingRewrites.set(id, { resolve, reject });
+      setTimeout(() => {
+        if (pendingRewrites.has(id)) {
+          pendingRewrites.delete(id);
+          reject(new Error('Rewrite timed out'));
+        }
+      }, 20000);
+    });
+  });
+  ipcMain.on('writely:system-rewrite-done', (_e, res) => {
+    const p = res && pendingRewrites.get(res.id);
+    if (!p) return;
+    pendingRewrites.delete(res.id);
+    if (res.error) p.reject(new Error(res.error));
+    else p.resolve(res);
+  });
+}
+
+function setupGlobalHotkey() {
+  try {
+    const ok = globalShortcut.register('CommandOrControl+Shift+G', () => {
+      runSystemFix().catch((e) => console.error('[system] runSystemFix failed:', e?.message || e));
+    });
+    console.log(`[system] global hotkey CommandOrControl+Shift+G ${ok ? 'registered' : 'FAILED to register (taken by another app?)'}`);
+  } catch (e) {
+    console.error('[system] globalShortcut failed:', e?.message || e);
+  }
 }
 
 app.whenReady().then(() => {
   setupAIHandlers();
   createWindow();
   createTray();
+  setupGlobalHotkey();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -340,6 +583,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+app.on('will-quit', () => {
+  try { globalShortcut.unregisterAll(); } catch (_) {}
 });
 app.on('before-quit', () => {
   for (const p of llamaProcesses.values()) try { p.kill(); } catch {}

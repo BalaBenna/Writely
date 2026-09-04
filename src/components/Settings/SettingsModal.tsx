@@ -46,6 +46,25 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, debounceMs, setDebounceMs, onOpenStyleGuide }) => {
   const [tab, setTab] = useState<Tab>('customization');
+  // System-wide opt-in (default OFF) — mirrored from the desktop bridge
+  const [sysOptIn, setSysOptIn] = useState(false);
+  const [sysOptInAvailable, setSysOptInAvailable] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    const api = (window as any).writelySystem;
+    if (!api?.getSystemOptIn) {
+      setSysOptInAvailable(false);
+      return;
+    }
+    setSysOptInAvailable(true);
+    api.getSystemOptIn().then((v: boolean) => setSysOptIn(!!v)).catch(() => {});
+  }, [isOpen]);
+  const handleSysOptIn = async (enabled: boolean) => {
+    setSysOptIn(enabled);
+    try {
+      await (window as any).writelySystem?.setSystemOptIn?.(enabled);
+    } catch (_) {}
+  };
   const [superhumanGo, setSuperhumanGo] = usePersisted(LS_KEYS.superhumanGo, false);
   const [language, setLanguage] = usePersisted(LS_KEYS.language, 'Indian English');
   const [detectTone, setDetectTone] = usePersisted(LS_KEYS.detectTone, true);
@@ -360,6 +379,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, d
                   <div className="flex justify-between"><span className="text-slate-500">Engine</span><span className="font-mono text-xs">{activeEngine==='local' ? 'Local • '+(navigator.platform||'Unknown') : (CLOUD_MODELS.find(m=>m.id===activeEngine)?.name || activeEngine)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Models</span><span className="text-xs">{(()=>{try{return JSON.parse(localStorage.getItem('writely_local_models_v2')||'[]').filter((m:any)=>m.status==='ready').length+' ready';}catch{return '—';}})()}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Cloud keys</span><span className="text-xs">{cloudManager.getConfiguredProviders().length} providers configured</span></div>
+                  {sysOptInAvailable && (
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/10">
+                      <span className="text-slate-500 text-sm">System-wide fixes <span className="text-[11px]">(⌘⇧G anywhere)</span></span>
+                      <button
+                        onClick={() => handleSysOptIn(!sysOptIn)}
+                        aria-pressed={sysOptIn}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${sysOptIn ? 'bg-[#0e7a6b]' : 'bg-slate-300 dark:bg-slate-700'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${sysOptIn ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <a href="https://github.com/BalaBenna/Writely" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5">View on GitHub <ExternalLink className="w-3.5 h-3.5"/></a>

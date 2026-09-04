@@ -41,6 +41,17 @@ body {
   overflow-x: hidden;
 }
 
+/* Inverted text selection — light theme: black bg + white text */
+::selection {
+  background: #000000;
+  color: #ffffff;
+}
+/* Dark theme: white bg + black text */
+.dark ::selection {
+  background: #ffffff;
+  color: #000000;
+}
+
 /* Glassmorphism Classes */
 .glass-panel {
   background: var(--bg-card);
@@ -58,64 +69,34 @@ body {
   box-shadow: var(--shadow-dropdown);
 }
 
-/* Custom Issue Wavy Underlines — text must stay transparent (only underlines/background visible) */
+/* Custom Issue Underlines — plain horizontal lines only (no waves, no boxes).
+   Text stays transparent so only the underline shows through. */
 .issue-grammar,
 .issue-spelling,
 .issue-clarity,
 .issue-tone {
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
+  background: none !important;
+  border-radius: 0;
+  padding: 0;
+  cursor: pointer;
 }
 .issue-grammar {
-  text-decoration: underline wavy #ef4444 2.5px;
+  text-decoration: underline solid #ef4444 2px;
   text-underline-offset: 4px;
-  background: rgba(239, 68, 68, 0.14);
-  border-radius: 2px;
-  padding: 0 1px;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
-.issue-grammar:hover, .issue-grammar.active {
-  background: rgba(239, 68, 68, 0.28);
-}
-
 .issue-spelling {
-  text-decoration: underline wavy #d97706 2.5px;
+  text-decoration: underline solid #d97706 2px;
   text-underline-offset: 4px;
-  background: rgba(245, 158, 11, 0.16);
-  border-radius: 2px;
-  padding: 0 1px;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
-.issue-spelling:hover, .issue-spelling.active {
-  background: rgba(245, 158, 11, 0.30);
-}
-
 .issue-clarity {
-  text-decoration: underline wavy #7c3aed 2.5px;
+  text-decoration: underline solid #7c3aed 2px;
   text-underline-offset: 4px;
-  background: rgba(139, 92, 246, 0.14);
-  border-radius: 2px;
-  padding: 0 1px;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
-.issue-clarity:hover, .issue-clarity.active {
-  background: rgba(139, 92, 246, 0.28);
-}
-
 .issue-tone {
-  text-decoration: underline wavy #059669 2.5px;
+  text-decoration: underline solid #059669 2px;
   text-underline-offset: 4px;
-  background: rgba(16, 185, 129, 0.14);
-  border-radius: 2px;
-  padding: 0 1px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.issue-tone:hover, .issue-tone.active {
-  background: rgba(16, 185, 129, 0.28);
 }
 
 /* Animations */

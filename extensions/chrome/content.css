@@ -45,22 +45,31 @@
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
 }
 
-/* Inline wavy underlines for contentEditable */
+/* Inline underlines for contentEditable — plain horizontal lines only */
 .writely-inline-mark {
   cursor: pointer;
-  border-radius: 2px;
-  padding: 0 1px;
+  background: none;
   text-decoration-line: underline;
-  text-decoration-style: wavy;
-  text-decoration-thickness: 1.2px;
+  text-decoration-style: solid;
+  text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  transition: background 0.15s;
 }
-.writely-inline-mark:hover { filter: brightness(1.15); }
-.writely-mark-grammar { text-decoration-color: #ef4444; background: rgba(239,68,68,0.08); }
-.writely-mark-spelling { text-decoration-color: #d97706; background: rgba(217,119,6,0.08); }
-.writely-mark-clarity { text-decoration-color: #7c3aed; background: rgba(124,58,237,0.08); }
-.writely-mark-tone { text-decoration-color: #059669; background: rgba(5,150,105,0.08); }
+.writely-mark-grammar { text-decoration-color: #ef4444; }
+.writely-mark-spelling { text-decoration-color: #d97706; }
+.writely-mark-clarity { text-decoration-color: #7c3aed; }
+.writely-mark-tone { text-decoration-color: #059669; }
+
+/* Inverted text selection — light: black bg + white text, dark: white bg + black text */
+::selection {
+  background: #000000;
+  color: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  ::selection {
+    background: #ffffff;
+    color: #000000;
+  }
+}
 
 /* Suggestion popup for textarea/input */
 #writely-suggestion-popup {

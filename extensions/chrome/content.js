@@ -1,4 +1,4 @@
-// Writely Content Script — Inline wavy underlines + floating badge + bridge
+// Writely Content Script — Inline horizontal underlines + floating badge + bridge
 (() => {
   let activeElement = null;
   let floatingBadge = null;
