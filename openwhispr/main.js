@@ -1110,6 +1110,33 @@ async function startApp() {
     }
   }
 
+  // Set up Writely fix-anywhere hotkey: capture the selection in any app
+  // and pop the proofread card next to the cursor. Default Cmd/Ctrl+Shift+G
+  // on fresh installs; rebindable via the register-proofread-hotkey IPC.
+  const { runProofreadFix } = require("./src/helpers/proofreadFlow");
+  const proofreadHotkeyCallback = () => {
+    if (hotkeyManager.isInListeningMode()) return;
+    void runProofreadFix({ selectionManager, windowManager });
+  };
+  windowManager._proofreadHotkeyCallback = proofreadHotkeyCallback;
+
+  const savedProofreadKey =
+    environmentManager.getProofreadKey?.() || "CommandOrControl+Shift+G";
+  {
+    const result = await hotkeyManager.registerSlot(
+      "proofread",
+      savedProofreadKey,
+      proofreadHotkeyCallback
+    );
+    if (!result.success) {
+      debugLogger.warn(
+        "Failed to register proofread hotkey",
+        { hotkey: savedProofreadKey },
+        "hotkey"
+      );
+    }
+  }
+
   // Set up translation hotkey (dictation cleaned up and translated into the
   // configured target language before pasting)
   const translationHotkeyCallback = () => {
@@ -1155,6 +1182,25 @@ async function startApp() {
       "meeting"
     );
   }
+
+  ipcMain.handle("register-proofread-hotkey", async (_event, hotkey) => {
+    if (hotkey) {
+      const result = await hotkeyManager.registerSlot("proofread", hotkey, proofreadHotkeyCallback, {
+        atomic: true,
+      });
+      windowManager.reconcileNativeKeyListeners();
+      if (result.success) {
+        environmentManager.saveProofreadKey(hotkey);
+        return { success: true };
+      }
+      return { success: false, message: result.error };
+    } else {
+      hotkeyManager.unregisterSlot("proofread");
+      environmentManager.saveProofreadKey("");
+      windowManager.reconcileNativeKeyListeners();
+      return { success: true };
+    }
+  });
 
   ipcMain.handle("register-meeting-hotkey", async (_event, hotkey) => {
     if (hotkey) {

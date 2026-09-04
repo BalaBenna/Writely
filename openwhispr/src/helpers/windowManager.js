@@ -37,6 +37,7 @@ const {
   fitDictationErrorWindowToWorkArea,
   resolveHorizontalWindowDirection,
   getMeetingNotificationWindowSize,
+  PROOFREAD_WINDOW_CONFIG,
   WINDOW_SIZES,
   WindowPositionUtil,
 } = require("./windowConfig");
@@ -2087,6 +2088,124 @@ class WindowManager {
       this._notificationReadyFallback = null;
     }
     win.showInactive();
+  }
+
+  // ---- Writely fix-anywhere popup (proofread overlay) ----
+  // Same transparent-overlay mechanics as meeting notifications, but
+  // positioned near the cursor and focusable so its buttons accept clicks.
+  async showProofreadPopup(data) {
+    if (this._onboardingActive) return false;
+    if (this.proofreadWindow && !this.proofreadWindow.isDestroyed()) {
+      try {
+        this.proofreadWindow.close();
+      } catch {}
+      this.proofreadWindow = null;
+      this._pendingProofreadData = null;
+    }
+
+    const cursor = screen.getCursorScreenPoint();
+    const display = screen.getDisplayNearestPoint(cursor);
+    const workArea = display.workArea || display.bounds;
+    const W = PROOFREAD_WINDOW_CONFIG.width;
+    const H = PROOFREAD_WINDOW_CONFIG.height;
+    const GAP = 12;
+    let x = Math.max(workArea.x + 8, Math.min(cursor.x, workArea.x + workArea.width - W - 8));
+    let y = cursor.y + GAP;
+    if (y + H > workArea.y + workArea.height - 8) {
+      y = Math.max(workArea.y + 8, cursor.y - H - GAP);
+    }
+
+    const win = new BrowserWindow({
+      ...PROOFREAD_WINDOW_CONFIG,
+      x: Math.round(x),
+      y: Math.round(y),
+    });
+    this.proofreadWindow = win;
+    win.on("closed", () => {
+      if (this.proofreadWindow !== win) return;
+      this.proofreadWindow = null;
+      this._pendingProofreadData = null;
+      if (this._proofreadReadyFallback) {
+        clearTimeout(this._proofreadReadyFallback);
+        this._proofreadReadyFallback = null;
+      }
+    });
+
+    try {
+      win.setContentProtection(true);
+    } catch {}
+    try {
+      WindowPositionUtil.setupAlwaysOnTop(win);
+    } catch {}
+
+    this._pendingProofreadData = data;
+    try {
+      if (process.env.NODE_ENV === "development") {
+        await DevServerManager.waitForDevServer();
+        if (this.proofreadWindow !== win) return false;
+        await win.loadURL(`${DevServerManager.DEV_SERVER_URL}?proofread-popup=true`);
+      } else {
+        const fileInfo = DevServerManager.getAppFilePath(false);
+        await win.loadFile(fileInfo.path, {
+          query: { ...fileInfo.query, "proofread-popup": "true" },
+        });
+      }
+    } catch (error) {
+      if (this.proofreadWindow !== win) return false;
+      this.dismissProofreadPopup();
+      throw error;
+    }
+    if (this.proofreadWindow !== win) return false;
+    if (this._onboardingActive) {
+      this.dismissProofreadPopup();
+      return false;
+    }
+
+    const readyFallback = setTimeout(() => {
+      if (this._proofreadReadyFallback !== readyFallback) return;
+      this._proofreadReadyFallback = null;
+      if (this._onboardingActive || this.proofreadWindow !== win || win.isDestroyed()) return;
+      debugLogger.warn("Proofread renderer did not signal ready, force-showing", {}, "proofread");
+      win.webContents.send("proofread-popup-data", data);
+      try {
+        win.show();
+      } catch {}
+    }, 3000);
+    this._proofreadReadyFallback = readyFallback;
+    return true;
+  }
+
+  showProofreadWindow(ownerWebContents) {
+    if (this._onboardingActive) {
+      this.dismissProofreadPopup();
+      return;
+    }
+    const win = this.proofreadWindow;
+    if (!win || win.isDestroyed() || (ownerWebContents && win.webContents !== ownerWebContents)) {
+      return;
+    }
+    if (this._proofreadReadyFallback) {
+      clearTimeout(this._proofreadReadyFallback);
+      this._proofreadReadyFallback = null;
+    }
+    try {
+      win.show();
+    } catch {}
+  }
+
+  dismissProofreadPopup() {
+    this._pendingProofreadData = null;
+    if (this._proofreadReadyFallback) {
+      clearTimeout(this._proofreadReadyFallback);
+      this._proofreadReadyFallback = null;
+    }
+    const win = this.proofreadWindow;
+    this.proofreadWindow = null;
+    if (win && !win.isDestroyed()) {
+      try {
+        win.close();
+      } catch {}
+    }
   }
 
   dismissMeetingNotification({ notifyEngine = true, flushQueued = true } = {}) {

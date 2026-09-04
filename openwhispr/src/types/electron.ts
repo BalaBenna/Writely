@@ -97,6 +97,17 @@ export interface MeetingAutoEndNotificationData {
 export type MeetingNotificationData =
   MeetingDetectionNotificationData | MeetingAutoEndNotificationData;
 
+// Writely fix-anywhere popup: captured selection plus its replace session.
+export interface ProofreadPopupData {
+  sessionId: string;
+  text: string;
+  characterCount?: number;
+}
+
+export type ProofreadRespondPayload =
+  | { action: "accept"; sessionId: string; text: string }
+  | { action: "dismiss" };
+
 export interface MeetingAutoEndRequest {
   sessionId: string;
   reason?: MeetingAutoEndReason;
@@ -2866,6 +2877,12 @@ declare global {
         detectionId: string,
         action: string
       ) => Promise<{ success: boolean }>;
+      // Writely fix-anywhere popup channels
+      onProofreadPopupData?: (callback: (data: ProofreadPopupData) => void) => () => void;
+      getProofreadData?: () => Promise<ProofreadPopupData | null>;
+      proofreadReady?: () => Promise<void>;
+      proofreadRespond?: (payload: ProofreadRespondPayload) => Promise<{ success: boolean }>;
+      registerProofreadHotkey?: (hotkey: string) => Promise<{ success: boolean; message?: string }>;
       joinCalendarMeeting?: (eventId: string) => Promise<{ success: boolean }>;
       getPendingMeetingNoteNavigation?: () => Promise<{
         noteId: number;

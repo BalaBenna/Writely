@@ -1269,6 +1269,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
   meetingNotificationReady: () => ipcRenderer.invoke("meeting-notification-ready"),
   meetingNotificationRespond: (detectionId, action) =>
     ipcRenderer.invoke("meeting-notification-respond", detectionId, action),
+  // Writely fix-anywhere popup channels
+  onProofreadPopupData: registerListener(
+    "proofread-popup-data",
+    (callback) => (_event, data) => callback(data)
+  ),
+  getProofreadData: () => ipcRenderer.invoke("get-proofread-data"),
+  proofreadReady: () => ipcRenderer.invoke("proofread-ready"),
+  proofreadRespond: (payload) => ipcRenderer.invoke("proofread-respond", payload),
+  registerProofreadHotkey: (hotkey) => ipcRenderer.invoke("register-proofread-hotkey", hotkey),
   joinCalendarMeeting: (eventId) => ipcRenderer.invoke("join-calendar-meeting", eventId),
   getPendingMeetingNoteNavigation: () => ipcRenderer.invoke("get-pending-meeting-note-navigation"),
   onMeetingNoteNavigationPending: registerListener(

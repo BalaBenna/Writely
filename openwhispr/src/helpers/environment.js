@@ -431,6 +431,16 @@ class EnvironmentManager {
     return result;
   }
 
+  getProofreadKey() {
+    return this._getKey("PROOFREAD_KEY");
+  }
+
+  saveProofreadKey(key) {
+    const result = this._saveKey("PROOFREAD_KEY", key);
+    this.saveAllKeysToEnvFile().catch(() => {});
+    return result;
+  }
+
   getMeetingKey() {
     return this._getKey("MEETING_KEY");
   }

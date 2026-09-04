@@ -277,6 +277,30 @@ const AUTO_END_NOTIFICATION_WINDOW_SIZE = {
   height: 128,
 };
 
+// Writely fix-anywhere popup: transparent overlay card near the cursor.
+// Focusable (unlike notifications) so buttons are clickable.
+const PROOFREAD_WINDOW_CONFIG = {
+  width: 440,
+  height: 360,
+  frame: false,
+  transparent: true,
+  alwaysOnTop: true,
+  skipTaskbar: true,
+  resizable: false,
+  focusable: true,
+  hasShadow: false,
+  show: false,
+  acceptFirstMouse: true,
+  webPreferences: {
+    preload: path.join(__dirname, "..", "..", "preload.js"),
+    nodeIntegration: false,
+    contextIsolation: true,
+    sandbox: true,
+  },
+  visibleOnAllWorkspaces: process.platform !== "win32",
+  type: OVERLAY_WINDOW_TYPES.notification,
+};
+
 function getMeetingNotificationWindowSize(promptData) {
   if (promptData?.kind === "auto-end") {
     return AUTO_END_NOTIFICATION_WINDOW_SIZE;
@@ -380,6 +404,7 @@ module.exports = {
   resolveHorizontalWindowDirection,
   AUTO_END_NOTIFICATION_WINDOW_SIZE,
   getMeetingNotificationWindowSize,
+  PROOFREAD_WINDOW_CONFIG,
   WINDOW_SIZES,
   WindowPositionUtil,
   resolveOverlayWindowType,

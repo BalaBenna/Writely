@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import App from "./App.jsx";
 import AgentDictationPillOverlay from "./components/dictation/AgentDictationPillOverlay.tsx";
 import MeetingNotificationOverlay from "./components/MeetingNotificationOverlay.tsx";
+import ProofreadPopupOverlay from "./components/ProofreadPopupOverlay.tsx";
 import ReauthenticationScreen from "./components/ReauthenticationScreen.tsx";
 import UpdateNotificationOverlay from "./components/UpdateNotificationOverlay.tsx";
 import BackgroundModelDownloadTray from "./components/onboarding/BackgroundModelDownloadTray.tsx";
@@ -28,6 +29,10 @@ export default function AppRouter() {
 
   if (params.includes("meeting-notification=true")) {
     return <MeetingNotificationOverlay />;
+  }
+
+  if (params.includes("proofread-popup=true")) {
+    return <ProofreadPopupOverlay />;
   }
 
   if (params.includes("update-notification=true")) {

@@ -10750,6 +10750,32 @@ class IPCHandlers {
       this.windowManager?.showNotificationWindow(event.sender);
     });
 
+    // Writely fix-anywhere popup: renderer pulls pending data, signals ready,
+    // and reports accept (with corrected text) or dismiss.
+    ipcMain.handle("get-proofread-data", async () => {
+      return this.windowManager?._pendingProofreadData ?? null;
+    });
+
+    ipcMain.handle("proofread-ready", async (event) => {
+      this.windowManager?.showProofreadWindow(event.sender);
+    });
+
+    ipcMain.handle("proofread-respond", async (_event, payload) => {
+      try {
+        if (payload?.action === "accept" && payload?.sessionId && typeof payload?.text === "string") {
+          const res = await this.selectionManager?.replaceSelectedText(payload.sessionId, payload.text, {
+            restoreClipboard: true,
+          });
+          this.windowManager?.dismissProofreadPopup();
+          return { success: !!res?.success, code: res?.code };
+        }
+        this.windowManager?.dismissProofreadPopup();
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    });
+
     ipcMain.handle("get-update-notification-data", async () => {
       return this.windowManager?._pendingUpdateNotificationData ?? null;
     });
