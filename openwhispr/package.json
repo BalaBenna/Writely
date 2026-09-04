@@ -1,7 +1,7 @@
 {
-  "name": "open-whispr",
+  "name": "writely",
   "version": "1.9.2",
-  "description": "A desktop dictation application using whisper.cpp for speech-to-text transcription",
+  "description": "Writely - private voice-to-text dictation and AI writing assistant (based on OpenWhispr)",
   "main": "main.js",
   "private": true,
   "engines": {
@@ -89,8 +89,8 @@
     "desktop-app"
   ],
   "author": {
-    "name": "OpenWhispr Team",
-    "email": "support@openwhispr.com"
+    "name": "Writely Team",
+    "email": "team@writely.ai"
   },
   "license": "MIT",
   "devDependencies": {

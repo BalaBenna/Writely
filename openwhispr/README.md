@@ -1,3 +1,5 @@
+> **Writely edition** — this tree is [OpenWhispr](https://github.com/OpenWhispr/openwhispr) (MIT, © its contributors, see `LICENSE`) rebranded to **Writely** and merged with Writely's local-AI writing engine. Upstream docs below still reference OpenWhispr names for backend services (cloud API, OAuth, protocols), which are intentionally unchanged.
+
 <p align="center">
   <img src="src/assets/logo.svg" alt="OpenWhispr" width="120" />
 </p>
