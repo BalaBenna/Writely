@@ -83,6 +83,12 @@ export interface ApiKeySettings {
   groqApiKey: string;
   xaiApiKey: string;
   mistralApiKey: string;
+  deepseekApiKey: string;
+  fireworksApiKey: string;
+  togetherApiKey: string;
+  minimaxApiKey: string;
+  perplexityApiKey: string;
+  cohereApiKey: string;
   openrouterApiKey: string;
   cortiClientId: string;
   cortiClientSecret: string;

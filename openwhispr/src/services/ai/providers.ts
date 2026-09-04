@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGroq } from "@ai-sdk/groq";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createCohere } from "@ai-sdk/cohere";
 import type { LanguageModel } from "ai";
 import { getTinfoilLanguageModel } from "./tinfoilClient";
 import { API_ENDPOINTS } from "../../config/constants";
@@ -65,6 +66,25 @@ export async function getAIModel(
       }).chat(model);
     case "local":
       return createOpenAI({ apiKey: apiKey || "no-key", baseURL }).chat(model);
+    // Writely writing-assistant providers — all OpenAI-compatible chat
+    // completions except Cohere, which uses its native chat API.
+    case "deepseek":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.DEEPSEEK_BASE }).chat(model);
+    case "fireworks":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.FIREWORKS_BASE }).chat(model);
+    case "together":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.TOGETHER_BASE }).chat(model);
+    case "minimax":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.MINIMAX_BASE }).chat(model);
+    case "mistral":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.MISTRAL_BASE }).chat(model);
+    case "perplexity":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.PERPLEXITY_BASE }).chat(model);
+    case "xai":
+      return createOpenAI({ apiKey, baseURL: baseURL || API_ENDPOINTS.XAI_BASE }).chat(model);
+    case "cohere":
+      // Cohere's SDK speaks v2 spec; bridge to this factory's v4 LanguageModel type.
+      return createCohere({ apiKey })(model) as unknown as LanguageModel;
     default:
       throw new Error(`Unsupported AI SDK provider for renderer: ${provider}`);
   }

@@ -122,6 +122,15 @@ export const API_ENDPOINTS = {
   GROQ_BASE: "https://api.groq.com/openai/v1",
   CORTI_MODELS_BASE: "https://ai.eu.corti.app/v1",
   OPENROUTER_BASE: "https://openrouter.ai/api/v1",
+  // Writely writing-assistant providers (OpenAI-compatible chat completions,
+  // except Cohere which uses its own chat API via @ai-sdk/cohere).
+  DEEPSEEK_BASE: "https://api.deepseek.com/v1",
+  FIREWORKS_BASE: "https://api.fireworks.ai/inference/v1",
+  TOGETHER_BASE: "https://api.together.xyz/v1",
+  MINIMAX_BASE: "https://api.minimax.chat/v1",
+  MISTRAL_BASE: "https://api.mistral.ai/v1",
+  PERPLEXITY_BASE: "https://api.perplexity.ai",
+  XAI_BASE: "https://api.x.ai/v1",
   TRANSCRIPTION_BASE: DEFAULT_TRANSCRIPTION_BASE,
   TRANSCRIPTION: buildApiUrl(DEFAULT_TRANSCRIPTION_BASE, "/audio/transcriptions"),
 } as const;

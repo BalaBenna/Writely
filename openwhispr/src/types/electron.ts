@@ -1841,6 +1841,19 @@ declare global {
       // Mistral API key management
       getMistralKey: () => Promise<string | null>;
       saveMistralKey: (key: string) => Promise<void>;
+      // Writely writing-assistant providers
+      getDeepseekKey: () => Promise<string | null>;
+      saveDeepseekKey: (key: string) => Promise<void>;
+      getFireworksKey: () => Promise<string | null>;
+      saveFireworksKey: (key: string) => Promise<void>;
+      getTogetherKey: () => Promise<string | null>;
+      saveTogetherKey: (key: string) => Promise<void>;
+      getMinimaxKey: () => Promise<string | null>;
+      saveMinimaxKey: (key: string) => Promise<void>;
+      getPerplexityKey: () => Promise<string | null>;
+      savePerplexityKey: (key: string) => Promise<void>;
+      getCohereKey: () => Promise<string | null>;
+      saveCohereKey: (key: string) => Promise<void>;
       proxyMistralTranscription: (data: {
         audioBuffer: ArrayBuffer;
         model?: string;

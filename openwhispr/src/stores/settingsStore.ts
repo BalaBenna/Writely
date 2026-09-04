@@ -866,6 +866,12 @@ export interface SettingsState
   setGroqApiKey: (key: string) => void;
   setXaiApiKey: (key: string) => void;
   setMistralApiKey: (key: string) => void;
+  setDeepseekApiKey: (key: string) => void;
+  setFireworksApiKey: (key: string) => void;
+  setTogetherApiKey: (key: string) => void;
+  setMinimaxApiKey: (key: string) => void;
+  setPerplexityApiKey: (key: string) => void;
+  setCohereApiKey: (key: string) => void;
   setOpenrouterApiKey: (key: string) => void;
   setCortiClientId: (key: string) => void;
   setCortiClientSecret: (key: string) => void;
@@ -1101,6 +1107,12 @@ const SECRET_IPC_SAVERS = {
   groq: "saveGroqKey",
   xai: "saveXaiKey",
   mistral: "saveMistralKey",
+  deepseek: "saveDeepseekKey",
+  fireworks: "saveFireworksKey",
+  together: "saveTogetherKey",
+  minimax: "saveMinimaxKey",
+  perplexity: "savePerplexityKey",
+  cohere: "saveCohereKey",
   openrouter: "saveOpenrouterKey",
   cortiClientId: "saveCortiClientId",
   cortiClientSecret: "saveCortiClientSecret",
@@ -1148,6 +1160,12 @@ const STALE_SECRET_LOCALSTORAGE_KEYS = [
   "groqApiKey",
   "xaiApiKey",
   "mistralApiKey",
+  "deepseekApiKey",
+  "fireworksApiKey",
+  "togetherApiKey",
+  "minimaxApiKey",
+  "perplexityApiKey",
+  "cohereApiKey",
   "openrouterApiKey",
   "cortiClientId",
   "cortiClientSecret",
@@ -1275,6 +1293,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   groqApiKey: "",
   xaiApiKey: "",
   mistralApiKey: "",
+  deepseekApiKey: "",
+  fireworksApiKey: "",
+  togetherApiKey: "",
+  minimaxApiKey: "",
+  perplexityApiKey: "",
+  cohereApiKey: "",
   openrouterApiKey: "",
   cortiClientId: "",
   cortiClientSecret: "",
@@ -1899,6 +1923,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   setGroqApiKey: createSecretSetter("groqApiKey", "groq", "groq"),
   setXaiApiKey: createSecretSetter("xaiApiKey", "xai"),
   setMistralApiKey: createSecretSetter("mistralApiKey", "mistral", "mistral"),
+  setDeepseekApiKey: createSecretSetter("deepseekApiKey", "deepseek"),
+  setFireworksApiKey: createSecretSetter("fireworksApiKey", "fireworks"),
+  setTogetherApiKey: createSecretSetter("togetherApiKey", "together"),
+  setMinimaxApiKey: createSecretSetter("minimaxApiKey", "minimax"),
+  setPerplexityApiKey: createSecretSetter("perplexityApiKey", "perplexity"),
+  setCohereApiKey: createSecretSetter("cohereApiKey", "cohere"),
   setOpenrouterApiKey: createSecretSetter("openrouterApiKey", "openrouter", "openrouter"),
   setCortiClientId: (key: string) => {
     set({ cortiClientId: key });
@@ -2419,6 +2449,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     if (keys.groqApiKey !== undefined) s.setGroqApiKey(keys.groqApiKey);
     if (keys.xaiApiKey !== undefined) s.setXaiApiKey(keys.xaiApiKey);
     if (keys.mistralApiKey !== undefined) s.setMistralApiKey(keys.mistralApiKey);
+    if (keys.deepseekApiKey !== undefined) s.setDeepseekApiKey(keys.deepseekApiKey);
+    if (keys.fireworksApiKey !== undefined) s.setFireworksApiKey(keys.fireworksApiKey);
+    if (keys.togetherApiKey !== undefined) s.setTogetherApiKey(keys.togetherApiKey);
+    if (keys.minimaxApiKey !== undefined) s.setMinimaxApiKey(keys.minimaxApiKey);
+    if (keys.perplexityApiKey !== undefined) s.setPerplexityApiKey(keys.perplexityApiKey);
+    if (keys.cohereApiKey !== undefined) s.setCohereApiKey(keys.cohereApiKey);
     if (keys.openrouterApiKey !== undefined) s.setOpenrouterApiKey(keys.openrouterApiKey);
     if (keys.cortiClientId !== undefined) s.setCortiClientId(keys.cortiClientId);
     if (keys.cortiClientSecret !== undefined) s.setCortiClientSecret(keys.cortiClientSecret);

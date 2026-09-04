@@ -67,3 +67,15 @@ export interface EngineTelemetry {
   timestamp: number;
   tone?: ToneAnalysis;
 }
+
+
+export type ToneStyle = 'professional' | 'friendly' | 'concise' | 'academic' | 'casual';
+
+export interface RewriteResult {
+  tone: ToneStyle;
+  original: string;
+  rewritten: string;
+  explanation: string;
+  latencyMs: number;
+  providerUsed?: string;
+}
