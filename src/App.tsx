@@ -366,6 +366,7 @@ export const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         debounceMs={debounceMs}
         setDebounceMs={setDebounceMs}
+        onOpenStyleGuide={() => setCurrentScreen('styleguide')}
       />
 
       <OnboardingWizard
