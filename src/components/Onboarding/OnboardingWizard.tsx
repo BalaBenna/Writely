@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Feather, ShieldCheck, Cpu, Download, Zap, Apple, Monitor, Globe,
-  ChevronRight, ChevronLeft, Check, Keyboard, BellOff, RefreshCw, Lock, Eye,
+  ChevronRight, ChevronLeft, Check, Keyboard, BellOff, RefreshCw, Lock, Eye, ExternalLink,
 } from 'lucide-react';
 
 interface Props {
@@ -274,12 +274,22 @@ export const OnboardingWizard: React.FC<Props> = ({ isOpen, initialStep = 0, for
                       <>
                         <BellOff className="w-4 h-4 text-amber-500 shrink-0" />
                         <span className="text-xs text-slate-700 dark:text-slate-200">Permission needed for fixes outside this app.</span>
-                        <button
-                          onClick={checkPermissions}
-                          className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-semibold hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors shrink-0"
-                        >
-                          <RefreshCw className="w-3 h-3" /> Check again
-                        </button>
+                        <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                          {platform !== 'web' && (
+                            <button
+                              onClick={() => (window as any).writelySystem?.openSystemSettings?.(platform === 'mac' ? 'accessibility' : 'privacy')}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors"
+                            >
+                              Open Settings <ExternalLink className="w-3 h-3" />
+                            </button>
+                          )}
+                          <button
+                            onClick={checkPermissions}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-semibold hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors"
+                          >
+                            <RefreshCw className="w-3 h-3" /> Check again
+                          </button>
+                        </span>
                       </>
                     )}
                   </div>
@@ -288,31 +298,45 @@ export const OnboardingWizard: React.FC<Props> = ({ isOpen, initialStep = 0, for
                   {platform === 'mac' && (
                     <div className="mt-3 grid gap-2">
                       {[
-                        { n: '1', title: 'Accessibility', desc: 'System Settings → Privacy & Security → Accessibility → enable Writely', tag: 'For ⌘⇧G capture' },
-                        { n: '2', title: 'Input Monitoring', desc: 'Same page → Input Monitoring → enable Writely', tag: 'For global hotkey' },
+                        { n: '1', title: 'Accessibility', desc: 'System Settings → Privacy & Security → Accessibility → enable Writely', tag: 'For ⌘⇧G capture', pane: 'accessibility' },
+                        { n: '2', title: 'Input Monitoring', desc: 'Same page → Input Monitoring → enable Writely', tag: 'For global hotkey', pane: 'input' },
                       ].map((c) => (
-                        <div
+                        <button
                           key={c.n}
-                          className="flex items-start gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10"
+                          onClick={() => (window as any).writelySystem?.openSystemSettings?.(c.pane)}
+                          className="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-white dark:hover:bg-slate-900 transition-all active:scale-[0.99] group"
+                          title="Click to open this settings pane"
                         >
                           <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                             {c.n}
                           </span>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="text-[13px] font-bold text-slate-900 dark:text-white">
                               {c.title} <span className="ml-1 font-mono font-medium text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">{c.tag}</span>
                             </div>
                             <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{c.desc}</div>
                           </div>
-                        </div>
+                          <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Open <ExternalLink className="w-3.5 h-3.5" />
+                          </span>
+                        </button>
                       ))}
                     </div>
                   )}
                   {platform === 'windows' && (
-                    <div className="mt-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      Windows needs <strong className="text-slate-900 dark:text-white">no special permission</strong> — install, select text, press{' '}
-                      <kbd className="font-mono px-1 rounded bg-slate-900 text-white text-[10px]">Ctrl+Shift+G</kbd>. If SmartScreen warns on first run: <em>More info → Run anyway</em>.
-                    </div>
+                    <button
+                      onClick={() => (window as any).writelySystem?.openSystemSettings?.('privacy')}
+                      className="mt-3 w-full text-left p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 transition-all active:scale-[0.99] group"
+                      title="Click to open Windows privacy settings"
+                    >
+                      <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Windows needs <strong className="text-slate-900 dark:text-white">no special permission</strong> — install, select text, press{' '}
+                        <kbd className="font-mono px-1 rounded bg-slate-900 text-white text-[10px]">Ctrl+Shift+G</kbd>. If SmartScreen warns on first run: <em>More info → Run anyway</em>.
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Open Privacy settings <ExternalLink className="w-3.5 h-3.5" />
+                      </div>
+                    </button>
                   )}
                   {platform === 'web' && (
                     <div className="mt-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-950/50 backdrop-blur border border-white/60 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">

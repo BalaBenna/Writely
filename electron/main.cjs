@@ -488,6 +488,24 @@ function setupAIHandlers() {
   ipcMain.handle('writely:checkAccessibility', async () => {
     try { return await systemCapture.checkAccessibility(); } catch (e) { return { granted: false, hint: e?.message || 'check failed' }; }
   });
+  // Open the exact OS settings pane for a permission (from setup click)
+  ipcMain.handle('writely:openSystemSettings', async (_e, pane) => {
+    try {
+      if (process.platform === 'darwin') {
+        const anchor = pane === 'input' ? 'Privacy_ListenEvent' : 'Privacy_Accessibility';
+        await shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${anchor}`);
+        return true;
+      }
+      if (process.platform === 'win32') {
+        await shell.openExternal('ms-settings:privacy');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('[system] openSystemSettings failed:', e?.message || e);
+      return false;
+    }
+  });
   ipcMain.handle('writely:getSystemOptIn', async () => getSystemOptIn());
   ipcMain.handle('writely:setSystemOptIn', async (_e, enabled) => {
     const ok = setSystemOptIn(!!enabled);

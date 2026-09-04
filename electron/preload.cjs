@@ -54,6 +54,8 @@ contextBridge.exposeInMainWorld('writelySystem', {
   // Explicit user opt-in for system-wide fixes (default OFF)
   getSystemOptIn: () => ipcRenderer.invoke('writely:getSystemOptIn'),
   setSystemOptIn: (enabled) => ipcRenderer.invoke('writely:setSystemOptIn', enabled),
+  // Open the matching OS settings pane (mac: Accessibility/Input Monitoring, win: Privacy)
+  openSystemSettings: (pane) => ipcRenderer.invoke('writely:openSystemSettings', pane),
   // Overlay → Main → renderer: re-run a tab (tone) or a chat instruction
   // on the captured text. Accepts a tone string or { tone?, instruction?, base? }.
   requestRewrite: (arg) => ipcRenderer.invoke('writely:overlay-rewrite', typeof arg === 'string' ? { tone: arg } : arg),
