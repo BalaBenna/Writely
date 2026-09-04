@@ -9,6 +9,16 @@ contextBridge.exposeInMainWorld('writely', {
   isElectron: true,
   version: process.env.npm_package_version || '1.4.0',
   getSystemInfo: () => ipcRenderer.invoke('writely:getSystemInfo'),
+  scanModels: () => ipcRenderer.invoke('writely:scanModels'),
+  getModelsDir: () => ipcRenderer.invoke('writely:getModelsDir'),
+  downloadModel: (modelId) => ipcRenderer.invoke('writely:downloadModel', modelId),
+  deleteModel: (modelId) => ipcRenderer.invoke('writely:deleteModel', modelId),
+  linkExternalModel: (modelId, externalPath) => ipcRenderer.invoke('writely:linkExternalModel', modelId, externalPath),
+  onDownloadProgress: (cb) => {
+    const handler = (_e, data) => cb(data);
+    ipcRenderer.on('writely:download-progress', handler);
+    return () => ipcRenderer.removeListener('writely:download-progress', handler);
+  },
 });
 
 contextBridge.exposeInMainWorld('writelyAI', {

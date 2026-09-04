@@ -19,7 +19,6 @@ export const EXPANDED_LOCAL_MODELS: ModelInfo[] = [
     languages: 'English (US/UK/CA/AU)',
     isBuiltIn: true,
   },
-  // ——— Fast tier: 3B/4B for low RAM, continuous grammar ———
   {
     id: 'qwen3-4b',
     name: 'Qwen3 4B (Q4_K_M)',
@@ -54,7 +53,6 @@ export const EXPANDED_LOCAL_MODELS: ModelInfo[] = [
     backend: 'llama.cpp',
     languages: 'Multilingual',
   },
-  // ——— Balanced tier: 8B default ———
   {
     id: 'qwen3-8b',
     name: 'Qwen3 8B (Q4_K_M)',
@@ -106,7 +104,6 @@ export const EXPANDED_LOCAL_MODELS: ModelInfo[] = [
     backend: 'MLX',
     languages: 'English',
   },
-  // ——— Quality tier: 14B ———
   {
     id: 'qwen3-14b',
     name: 'Qwen3 14B (Q4_K_M)',
@@ -141,7 +138,6 @@ export const EXPANDED_LOCAL_MODELS: ModelInfo[] = [
     backend: 'llama.cpp',
     languages: 'Multilingual',
   },
-  // ——— Legacy / specialty ———
   {
     id: 'apple-speech-writing',
     name: 'Apple Foundation Proofreader',
@@ -210,13 +206,39 @@ export const EXPANDED_LOCAL_MODELS: ModelInfo[] = [
   },
 ];
 
+// Maps our Writely ids to common external filenames to detect pre-existing downloads.
+// User may have downloaded Qwen/Mistral GGUF manually via Ollama, LM Studio, or HF CLI.
+const EXTERNAL_ALIASES: Record<string, string[]> = {
+  'qwen3-4b': ['qwen3-4b', 'qwen2.5-3b', 'qwen-4b', 'qwen3:4b'],
+  'qwen3-8b': ['qwen3-8b', 'qwen2.5-7b', 'qwen3:8b', 'qwen2.5:7b', 'qwen3-7b'],
+  'qwen3-14b': ['qwen3-14b', 'qwen2.5-14b', 'qwen3:14b'],
+  'mistral-3-3b': ['mistral-3b', 'mistral:3b', 'mistral-nemo'],
+  'mistral-3-8b': ['mistral-8b', 'mistral:7b', 'mistral-7b'],
+  'mistral-3-14b': ['mistral-14b', 'mixtral'],
+  'writely-qwen-0.5B-q4': ['qwen2.5-0.5b', 'qwen-0.5b'],
+  'writely-qwen-1.5B-q4': ['qwen2.5-1.5b', 'qwen-1.5b'],
+  'llama-32-1b-writing': ['llama3.2:1b', 'llama-1b', 'llama-3.2-1b'],
+};
+
+export interface ModelDetectionResult {
+  id: string;
+  found: boolean;
+  path?: string;
+  source: 'writely-dir' | 'hf-cache' | 'ollama' | 'lmstudio' | 'external' | 'built-in';
+  sizeBytes?: number;
+}
+
 class ModelManager {
   private models: ModelInfo[] = [...EXPANDED_LOCAL_MODELS];
   private activeModelId: string = 'writely-gector-80M-int8';
   private listeners: Array<() => void> = [];
+  private detectionDone = false;
+  private externalModels: ModelDetectionResult[] = [];
 
   constructor() {
     this.loadState();
+    // Kick off detection async — non-blocking so UI renders fast
+    this.detectPreExistingModels().catch(() => {});
   }
 
   private loadState() {
@@ -224,8 +246,21 @@ class ModelManager {
       if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('writely_local_models_v2');
         if (saved) {
-          const parsed = JSON.parse(saved);
-          this.models = parsed;
+          const parsed = JSON.parse(saved) as ModelInfo[];
+          // Merge: keep catalog structure but restore status/progress from storage
+          const savedMap = new Map(parsed.map(m => [m.id, m]));
+          this.models = EXPANDED_LOCAL_MODELS.map(def => {
+            const s = savedMap.get(def.id);
+            if (s) {
+              // Respect user's prior ready state, but don't overwrite catalog metadata
+              return { ...def, status: s.status as any, downloadProgress: s.downloadProgress };
+            }
+            return { ...def };
+          });
+          // Also include any custom-registered models that were in storage but not catalog
+          for (const s of parsed) {
+            if (!this.models.find(m => m.id === s.id)) this.models.push(s);
+          }
         }
         const active = localStorage.getItem('writely_active_local_model');
         if (active) this.activeModelId = active;
@@ -245,26 +280,15 @@ class ModelManager {
 
   subscribe(listener: () => void) {
     this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
-    };
+    return () => { this.listeners = this.listeners.filter((l) => l !== listener); };
   }
+  private notify() { this.listeners.forEach((l) => l()); }
 
-  private notify() {
-    this.listeners.forEach((l) => l());
-  }
-
-  getModels(): ModelInfo[] {
-    return this.models;
-  }
-
-  getActiveModel(): ModelInfo {
-    return this.models.find((m) => m.id === this.activeModelId) || this.models[0];
-  }
-
-  getActiveRealtimeModel(): ModelInfo {
-    return this.getActiveModel();
-  }
+  getModels(): ModelInfo[] { return this.models; }
+  getActiveModel(): ModelInfo { return this.models.find((m) => m.id === this.activeModelId) || this.models[0]; }
+  getActiveRealtimeModel(): ModelInfo { return this.getActiveModel(); }
+  isDetectionDone(): boolean { return this.detectionDone; }
+  getExternalDetections(): ModelDetectionResult[] { return this.externalModels; }
 
   setActiveModel(id: string) {
     const target = this.models.find((m) => m.id === id);
@@ -274,14 +298,173 @@ class ModelManager {
     }
   }
 
-  downloadModel(modelId: string, onProgress?: (percent: number) => void): Promise<boolean> {
+  // -------------------------------------------------------------------------
+  // Detection — called once on init, also exposable for "Rescan" button
+  // -------------------------------------------------------------------------
+  async detectPreExistingModels(): Promise<ModelDetectionResult[]> {
+    const results: ModelDetectionResult[] = [];
+    // 1) Electron FS scan (most reliable) — checks ~/.writely/models, HF cache, ollama dir
+    const electronScan = await this.scanViaElectron();
+    if (electronScan) {
+      for (const r of electronScan) {
+        results.push(r);
+        if (r.found) this.markReady(r.id, r.source);
+      }
+      this.externalModels = results;
+      this.detectionDone = true;
+      this.saveState();
+      return results;
+    }
+
+    // 2) Web fallback — probe Ollama / LM Studio / HF via localhost HTTP
+    const webProbes = await this.scanViaWebProbes();
+    for (const r of webProbes) {
+      results.push(r);
+      if (r.found) this.markReady(r.id, r.source);
+    }
+
+    // 3) Check if any model was previously marked ready in localStorage but file gone
+    // (already handled via loadState — we keep it, but detection can downgrade if Electron says missing)
+    this.externalModels = results;
+    this.detectionDone = true;
+    this.saveState();
+    return results;
+  }
+
+  private markReady(id: string, source: ModelDetectionResult['source']) {
+    const m = this.models.find(x => x.id === id);
+    if (m && m.status !== 'ready') {
+      m.status = 'ready';
+      m.downloadProgress = 100;
+      // Annotate source in description so user knows where it came from
+      if (source !== 'writely-dir' && source !== 'built-in') {
+        const tag = source === 'ollama' ? 'via Ollama' : source === 'lmstudio' ? 'via LM Studio' : source === 'hf-cache' ? 'via HF cache' : 'detected';
+        if (!m.tag || m.tag === '') m.tag = tag;
+      }
+    }
+  }
+
+  private async scanViaElectron(): Promise<ModelDetectionResult[] | null> {
+    try {
+      const api: any = (window as any).writely;
+      if (!api?.scanModels) return null;
+      const res = await api.scanModels();
+      // Expected shape: { id: string, found: boolean, path?: string, source?: string, sizeBytes?: number }[]
+      if (Array.isArray(res)) return res as ModelDetectionResult[];
+      // Alternative shape: { models: [...] }
+      if (res?.models && Array.isArray(res.models)) return res.models as ModelDetectionResult[];
+      return null;
+    } catch { return null; }
+  }
+
+  private async scanViaWebProbes(): Promise<ModelDetectionResult[]> {
+    const out: ModelDetectionResult[] = [];
+    // Probe Ollama at 11434 — if reachable, list models and fuzzy-match
+    try {
+      const ollamaTags = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(1500) }).then(r => r.json()).catch(()=>null);
+      const ollamaModels: string[] = (ollamaTags?.models || []).map((m: any) => (m.name || m.model || '').toLowerCase());
+      if (ollamaModels.length) {
+        for (const [id, aliases] of Object.entries(EXTERNAL_ALIASES)) {
+          const found = ollamaModels.some(om => aliases.some(a => om.includes(a)) || om.includes(id.toLowerCase()));
+          out.push({ id, found, source: 'ollama', path: 'ollama://' + (ollamaModels.find(om => aliases.some(a=>om.includes(a))) || '') });
+        }
+      }
+    } catch {}
+
+    // Probe LM Studio at 1234
+    try {
+      const lm = await fetch('http://localhost:1234/v1/models', { signal: AbortSignal.timeout(1500) }).then(r=>r.json()).catch(()=>null);
+      const lmIds: string[] = (lm?.data || []).map((m:any)=>(m.id||'').toLowerCase());
+      if (lmIds.length) {
+        for (const [id, aliases] of Object.entries(EXTERNAL_ALIASES)) {
+          if (out.find(o=>o.id===id && o.found)) continue;
+          const found = lmIds.some(lmId => aliases.some(a=>lmId.includes(a)) || lmId.includes(id.toLowerCase()));
+          if (found) out.push({ id, found: true, source: 'lmstudio', path: 'lmstudio://' + (lmIds.find(x=>aliases.some(a=>x.includes(a)))||'') });
+        }
+      }
+    } catch {}
+
+    // Probe custom endpoint if configured
+    try {
+      const ceRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('writely_custom_endpoint') : null;
+      if (ceRaw) {
+        const ce = JSON.parse(ceRaw);
+        if (ce?.enabled && ce?.baseUrl) {
+          const ceModels = await fetch(`${ce.baseUrl.replace(/\/$/, '')}/models`, { signal: AbortSignal.timeout(1500) }).then(r=>r.json()).catch(()=>null);
+          const ids: string[] = (ceModels?.data || []).map((m:any)=>(m.id||'').toLowerCase());
+          if (ids.length) {
+            for (const [id, aliases] of Object.entries(EXTERNAL_ALIASES)) {
+              if (out.find(o=>o.id===id && o.found)) continue;
+              const found = ids.some(x => aliases.some(a=>x.includes(a)));
+              if (found) out.push({ id, found: true, source: 'external', path: ce.baseUrl });
+            }
+          }
+        }
+      }
+    } catch {}
+    return out;
+  }
+
+  /** Public rescan trigger for Settings UI */
+  async rescan(): Promise<ModelDetectionResult[]> {
+    this.detectionDone = false;
+    return this.detectPreExistingModels();
+  }
+
+  // -------------------------------------------------------------------------
+  // Download — Electron real download with progress, else simulated
+  // -------------------------------------------------------------------------
+  async downloadModel(modelId: string, onProgress?: (percent: number) => void): Promise<boolean> {
     const target = this.models.find((m) => m.id === modelId);
     if (!target) return Promise.reject(new Error('Model not found'));
+    if (target.isBuiltIn) return Promise.resolve(true);
+    if (target.status === 'ready') return Promise.resolve(true);
 
+    // Try Electron real download
+    const electronApi: any = (window as any).writely;
+    if (electronApi?.downloadModel) {
+      target.status = 'downloading';
+      target.downloadProgress = 0;
+      this.saveState();
+      try {
+        // downloadModel should return promise that resolves when done, and emits progress via callback
+        // We subscribe to progress events via writely:onDownloadProgress if available
+        let unsub: (()=>void) | null = null;
+        if (electronApi.onDownloadProgress) {
+          unsub = electronApi.onDownloadProgress((evt: { id: string; percent: number }) => {
+            if (evt.id === modelId) {
+              target.downloadProgress = evt.percent;
+              if (onProgress) onProgress(evt.percent);
+              this.notify();
+            }
+          });
+        }
+        const ok = await electronApi.downloadModel(modelId);
+        if (unsub) unsub();
+        if (ok) {
+          target.status = 'ready';
+          target.downloadProgress = 100;
+          this.activeModelId = modelId;
+          this.saveState();
+          return true;
+        } else {
+          target.status = 'available';
+          target.downloadProgress = 0;
+          this.saveState();
+          return false;
+        }
+      } catch (e) {
+        target.status = 'available';
+        target.downloadProgress = 0;
+        this.saveState();
+        throw e;
+      }
+    }
+
+    // Web / fallback: simulated download with realistic timing + auto-activate
     target.status = 'downloading';
     target.downloadProgress = 0;
     this.saveState();
-
     return new Promise((resolve) => {
       let progress = 0;
       const interval = setInterval(() => {
@@ -291,6 +474,7 @@ class ModelManager {
           clearInterval(interval);
           target.status = 'ready';
           target.downloadProgress = 100;
+          this.activeModelId = modelId;
           this.saveState();
           if (onProgress) onProgress(100);
           resolve(true);
@@ -303,15 +487,32 @@ class ModelManager {
     });
   }
 
-  deleteModel(modelId: string) {
+  async deleteModel(modelId: string) {
     const target = this.models.find((m) => m.id === modelId);
     if (target && !target.isBuiltIn) {
+      // Try Electron FS delete
+      try {
+        const api: any = (window as any).writely;
+        if (api?.deleteModel) await api.deleteModel(modelId);
+      } catch {}
       target.status = 'available';
       target.downloadProgress = 0;
-      if (this.activeModelId === modelId) {
-        this.activeModelId = 'writely-gector-80M-int8';
-      }
+      if (this.activeModelId === modelId) this.activeModelId = 'writely-gector-80M-int8';
       this.saveState();
+    }
+  }
+
+  // Import an externally-detected model as ready without download (user already has GGUF)
+  linkExternalModel(modelId: string, externalPath: string) {
+    const m = this.models.find(x => x.id === modelId);
+    if (m) {
+      m.status = 'ready';
+      m.downloadProgress = 100;
+      this.saveState();
+      try {
+        const api: any = (window as any).writely;
+        if (api?.linkExternalModel) api.linkExternalModel(modelId, externalPath);
+      } catch {}
     }
   }
 }

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { ModelInfo, CloudModelInfo, CustomEndpointConfig, CloudProviderId } from '../../types';
 import { modelManager } from '../../engine/localModel';
-import { cloudManager } from '../../engine/cloudProviders';
+import { cloudManager, PROVIDER_CONFIGS } from '../../engine/cloudProviders';
 import { detectSystemInfo, getRecommendedModelId, compatibilityForModel, SystemInfo } from '../../utils/systemInfo';
 
 interface ModelCatalogProps {
@@ -49,11 +49,10 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
   // Cloud state
   const [cloudModels, setCloudModels] = useState<CloudModelInfo[]>(cloudManager.getCloudModels());
   const [activeCloudModelId, setActiveCloudModelId] = useState<string>(cloudManager.getActiveModelId());
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({
-    openai: cloudManager.getApiKey('openai'),
-    anthropic: cloudManager.getApiKey('anthropic'),
-    gemini: cloudManager.getApiKey('gemini'),
-    groq: cloudManager.getApiKey('groq'),
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => {
+    const o: Record<string, string> = {};
+    (Object.keys(PROVIDER_CONFIGS) as CloudProviderId[]).forEach(p => { o[p] = cloudManager.getApiKey(p); });
+    return o;
   });
   const [testStatus, setTestStatus] = useState<Record<string, { loading?: boolean; msg?: string; ok?: boolean }>>({});
 
@@ -483,52 +482,28 @@ export const ModelCatalog: React.FC<ModelCatalogProps> = ({ onOpenSettings }) =>
               </div>
             </div>
 
-            {/* Provider Key Inputs */}
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/20 text-[11px] text-amber-900 dark:text-amber-200">
+              <strong>OpenRouter tip:</strong> One OpenRouter key (sk-or-...) gives access to 200+ models — OpenAI, Claude, Gemini, DeepSeek, Llama — without separate keys. Paste it under OpenRouter below.
+            </div>
+            {/* Provider Key Inputs — all 14 providers */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { id: 'openai' as CloudProviderId, name: 'OpenAI API Key', placeholder: 'sk-proj-...', link: 'https://platform.openai.com/api-keys' },
-                { id: 'anthropic' as CloudProviderId, name: 'Anthropic API Key', placeholder: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys' },
-                { id: 'gemini' as CloudProviderId, name: 'Google Gemini API Key', placeholder: 'AIzaSy...', link: 'https://aistudio.google.com/app/apikey' },
-                { id: 'groq' as CloudProviderId, name: 'Groq API Key (Ultra-Fast)', placeholder: 'gsk_...', link: 'https://console.groq.com/keys' },
-              ].map((prov) => {
-                const status = testStatus[prov.id];
+              {(Object.entries(PROVIDER_CONFIGS) as [CloudProviderId, typeof PROVIDER_CONFIGS[CloudProviderId]][]).filter(([id]) => id !== 'ollama').map(([id, cfg]) => {
+                const status = testStatus[id];
+                const isFeatured = ['openrouter','openai','anthropic','gemini','deepseek','groq','together','fireworks','minimax'].includes(id);
                 return (
-                  <div key={prov.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 space-y-2.5">
+                  <div key={id} className={`p-4 rounded-2xl border space-y-2.5 ${isFeatured ? 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-white/5' : 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/70 dark:border-white/5'}`}>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-900 dark:text-white">{prov.name}</span>
-                      <a
-                        href={prov.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium"
-                      >
-                        <span>Get Key</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                      <span className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">{cfg.displayName} {isFeatured && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500 text-white font-bold">POPULAR</span>} {apiKeys[id] && <span className="w-2 h-2 rounded-full bg-emerald-500" title="Key saved" />} </span>
+                      {cfg.keyUrl && (
+                        <a href={cfg.keyUrl} target="_blank" rel="noreferrer" className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium"><span>Get Key</span><ExternalLink className="w-3 h-3" /></a>
+                      )}
                     </div>
-
                     <div className="flex items-center space-x-2">
-                      <input
-                        type="password"
-                        value={apiKeys[prov.id] || ''}
-                        onChange={(e) => handleSaveApiKey(prov.id, e.target.value)}
-                        placeholder={prov.placeholder}
-                        className="flex-1 bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/10 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500"
-                      />
-                      <button
-                        onClick={() => handleTestCloudConnection(prov.id)}
-                        disabled={!apiKeys[prov.id] || status?.loading}
-                        className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 disabled:opacity-40 text-xs font-semibold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/10 transition-colors"
-                      >
-                        {status?.loading ? 'Testing...' : 'Verify'}
-                      </button>
+                      <input type="password" value={apiKeys[id] || ''} onChange={(e) => handleSaveApiKey(id as CloudProviderId, e.target.value)} placeholder={cfg.keyPlaceholder} className="flex-1 bg-white dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/10 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500" />
+                      <button onClick={() => handleTestCloudConnection(id as CloudProviderId)} disabled={!apiKeys[id] || status?.loading} className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:opacity-40 text-xs font-semibold transition-colors">{status?.loading ? 'Testing...' : 'Verify'}</button>
                     </div>
-
                     {status?.msg && (
-                      <div className={`text-[11px] flex items-center gap-1 ${status.ok ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-600 dark:text-red-400'}`}>
-                        {status.ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-                        <span>{status.msg}</span>
-                      </div>
+                      <div className={`text-[11px] flex items-center gap-1 ${status.ok ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-red-600 dark:text-red-400'}`}>{status.ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}<span>{status.msg}</span></div>
                     )}
                   </div>
                 );

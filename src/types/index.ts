@@ -82,7 +82,32 @@ export interface ModelInfo {
   isBuiltIn?: boolean;
 }
 
-export type CloudProviderId = 'openai' | 'anthropic' | 'gemini' | 'groq' | 'ollama';
+export type CloudProviderId =
+  | 'openai'
+  | 'anthropic'
+  | 'gemini'
+  | 'groq'
+  | 'deepseek'
+  | 'openrouter'
+  | 'fireworks'
+  | 'together'
+  | 'minimax'
+  | 'mistral'
+  | 'perplexity'
+  | 'cohere'
+  | 'xai'
+  | 'ollama';
+
+export interface ProviderConfig {
+  id: CloudProviderId;
+  displayName: string;
+  baseUrl: string; // OpenAI-compatible base (without /chat/completions)
+  keyUrl: string;
+  keyPrefix?: string;
+  keyPlaceholder: string;
+  headerStyle: 'bearer' | 'x-api-key' | 'query-key';
+  apiPath: string; // chat completions path relative to baseUrl
+}
 
 export interface CloudModelInfo {
   id: string;
@@ -94,6 +119,7 @@ export interface CloudModelInfo {
   speedRating: number;
   accuracyRating: number;
   isConfigured: boolean;
+  featured?: boolean;
 }
 
 export interface CustomEndpointConfig {
