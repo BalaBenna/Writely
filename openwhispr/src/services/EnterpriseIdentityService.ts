@@ -24,7 +24,7 @@ export async function getManagedEnterpriseConfig(
       success: false,
       status: "error",
       code: "MANAGED_ENTERPRISE_UNSUPPORTED",
-      error: "Managed enterprise AI requires a newer version of OpenWhispr.",
+      error: "Managed enterprise AI requires a newer version of Writely.",
     };
   }
   return request(accountId, workspaceId, authGeneration, forceRefresh);
