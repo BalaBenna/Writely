@@ -2168,7 +2168,7 @@ class WindowManager {
       debugLogger.warn("Proofread renderer did not signal ready, force-showing", {}, "proofread");
       win.webContents.send("proofread-popup-data", data);
       try {
-        win.show();
+        win.showInactive();
       } catch {}
     }, 3000);
     this._proofreadReadyFallback = readyFallback;
@@ -2181,15 +2181,13 @@ class WindowManager {
       return;
     }
     const win = this.proofreadWindow;
-    if (!win || win.isDestroyed() || (ownerWebContents && win.webContents !== ownerWebContents)) {
-      return;
-    }
+    if (!win || win.isDestroyed() || (ownerWebContents && win.webContents !== ownerWebContents)) return;
     if (this._proofreadReadyFallback) {
       clearTimeout(this._proofreadReadyFallback);
       this._proofreadReadyFallback = null;
     }
     try {
-      win.show();
+      win.showInactive();
     } catch {}
   }
 

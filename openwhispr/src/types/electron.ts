@@ -2881,7 +2881,7 @@ declare global {
       onProofreadPopupData?: (callback: (data: ProofreadPopupData) => void) => () => void;
       getProofreadData?: () => Promise<ProofreadPopupData | null>;
       proofreadReady?: () => Promise<void>;
-      proofreadRespond?: (payload: ProofreadRespondPayload) => Promise<{ success: boolean }>;
+      proofreadRespond?: (payload: ProofreadRespondPayload) => Promise<{ success: boolean; code?: string }>;
       registerProofreadHotkey?: (hotkey: string) => Promise<{ success: boolean; message?: string }>;
       joinCalendarMeeting?: (eventId: string) => Promise<{ success: boolean }>;
       getPendingMeetingNoteNavigation?: () => Promise<{

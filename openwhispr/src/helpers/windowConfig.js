@@ -278,7 +278,11 @@ const AUTO_END_NOTIFICATION_WINDOW_SIZE = {
 };
 
 // Writely fix-anywhere popup: transparent overlay card near the cursor.
-// Focusable (unlike notifications) so buttons are clickable.
+// Mirrors the working notification recipe exactly (non-focusable +
+// showInactive + acceptFirstMouse): buttons stay clickable via the first
+// mouse event without stealing the target app's focus (which would drop
+// the user's selection). A focusable panel shown with show() never surfaces
+// while another app is frontmost.
 const PROOFREAD_WINDOW_CONFIG = {
   width: 440,
   height: 360,
@@ -287,7 +291,7 @@ const PROOFREAD_WINDOW_CONFIG = {
   alwaysOnTop: true,
   skipTaskbar: true,
   resizable: false,
-  focusable: true,
+  focusable: false,
   hasShadow: false,
   show: false,
   acceptFirstMouse: true,
