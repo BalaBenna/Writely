@@ -1116,7 +1116,19 @@ async function startApp() {
   const { runProofreadFix } = require("./src/helpers/proofreadFlow");
   const proofreadHotkeyCallback = () => {
     if (hotkeyManager.isInListeningMode()) return;
-    void runProofreadFix({ selectionManager, windowManager });
+    // Snapshot the target app at press time (before any window steals
+    // focus): macOS frontmost PID + win/linux probe, mirroring dictation.
+    void (async () => {
+      try {
+        await textEditMonitor?.captureTargetPid?.();
+      } catch {}
+      try {
+        await selectionManager?.captureTarget?.();
+      } catch {}
+      await runProofreadFix({ selectionManager, windowManager });
+    })().catch((error) => {
+      debugLogger.warn("Proofread hotkey failed", { error: error?.message }, "proofread");
+    });
   };
   windowManager._proofreadHotkeyCallback = proofreadHotkeyCallback;
 
