@@ -1,7 +1,7 @@
 {
   "name": "writely",
   "version": "1.9.2",
-  "description": "Writely - private voice-to-text dictation and AI writing assistant (based on OpenWhispr)",
+  "description": "Writely - private voice-to-text dictation and AI writing assistant",
   "main": "main.js",
   "private": true,
   "engines": {

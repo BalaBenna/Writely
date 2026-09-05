@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   :root {
@@ -84,18 +82,22 @@ body {
 }
 .issue-grammar {
   text-decoration: underline solid #ef4444 2px;
+  text-decoration-color: #ef4444 !important;
   text-underline-offset: 4px;
 }
 .issue-spelling {
   text-decoration: underline solid #d97706 2px;
+  text-decoration-color: #d97706 !important;
   text-underline-offset: 4px;
 }
 .issue-clarity {
   text-decoration: underline solid #7c3aed 2px;
+  text-decoration-color: #7c3aed !important;
   text-underline-offset: 4px;
 }
 .issue-tone {
   text-decoration: underline solid #059669 2px;
+  text-decoration-color: #059669 !important;
   text-underline-offset: 4px;
 }
 

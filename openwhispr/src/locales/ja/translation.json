@@ -4,7 +4,7 @@
       "sectionTitle": "言語",
       "sectionDescription": "インターフェースと文字起こしの言語を個別に設定",
       "uiLabel": "インターフェース言語",
-      "uiDescription": "OpenWhispr のインターフェースで使用する言語を選択",
+      "uiDescription": "Writely のインターフェースで使用する言語を選択",
       "transcriptionLabel": "文字起こし言語",
       "transcriptionDescription": "より正確な文字起こしのために話す言語を選択",
       "chineseScriptLabel": "中国語の字体（ディクテーション）",
@@ -64,12 +64,12 @@
     },
     "openControlPanel": "コントロールパネルを開く",
     "hideControlPanel": "コントロールパネルを非表示",
-    "quit": "OpenWhispr を終了",
-    "tooltip": "OpenWhispr - 音声ディクテーション"
+    "quit": "Writely を終了",
+    "tooltip": "Writely - 音声ディクテーション"
   },
   "menu": {
-    "appLabel": "OpenWhispr",
-    "quit": "OpenWhispr を終了",
+    "appLabel": "Writely",
+    "quit": "Writely を終了",
     "speech": "スピーチ",
     "settings": "設定...",
     "help": "ヘルプ",
@@ -87,8 +87,8 @@
       "message": "ブラウザでリンクを開けませんでした:\n{{url}}\n\nエラー: {{error}}"
     },
     "loadFailure": {
-      "title": "OpenWhispr の読み込みに失敗しました",
-      "message": "OpenWhispr の UI を読み込めませんでした。",
+      "title": "Writely の読み込みに失敗しました",
+      "message": "Writely の UI を読み込めませんでした。",
       "detail": {
         "window": "ウィンドウ: {{windowName}}",
         "error": "エラー {{errorCode}}: {{errorDescription}}",
@@ -99,17 +99,17 @@
   },
   "startup": {
     "error": {
-      "title": "OpenWhispr 起動エラー",
+      "title": "Writely 起動エラー",
       "message": "アプリケーションの起動に失敗しました:\n\n{{error}}\n\nこの問題を報告してください。"
     },
     "globeHotkey": {
       "title": "Globe ホットキーが使用できません",
-      "message": "OpenWhispr は Globe キーのホットキーを有効にできませんでした。",
+      "message": "Writely は Globe キーのホットキーを有効にできませんでした。",
       "details": {
         "unknown": "Globe リスナーの起動中に不明なエラーが発生しました。",
         "fallback": "Globe キーのショートカットは無効のままになります。既存のキーボードショートカットは引き続き使用できます。",
         "devHint": "`npm run compile:globe` を実行し、アプリを再ビルドしてリスナーバイナリを再生成してください。",
-        "reinstallHint": "OpenWhispr を再インストールするか、問題が解決しない場合はサポートにお問い合わせください。"
+        "reinstallHint": "Writely を再インストールするか、問題が解決しない場合はサポートにお問い合わせください。"
       }
     }
   },
@@ -206,7 +206,7 @@
   "onboarding": {
     "rehaul": {
       "permissions": {
-        "title": "3 分で OpenWhispr を設定",
+        "title": "3 分で Writely を設定",
         "microphoneDescription": "音声をテキストに変換します。",
         "accessibilityDescription": "アクティブなアプリにテキストを貼り付けます。",
         "systemAudioTitle": "システムオーディオ",
@@ -219,7 +219,7 @@
         "title": "どの言語を話しますか？",
         "titleLineOne": "どの言語を",
         "titleLineTwo": "話しますか？",
-        "description": "当てはまるものをすべて選択してください。OpenWhisprが言語の切り替えをより正確に認識できるようになります。"
+        "description": "当てはまるものをすべて選択してください。Writelyが言語の切り替えをより正確に認識できるようになります。"
       },
       "dictationHotkey": {
         "title": "キーボードショートカットを設定",
@@ -228,10 +228,10 @@
         "description": "どこからでもディクテーションを開始・停止できるキーボードショートカットを選びます。"
       },
       "assistantHotkey": {
-        "title": "OpenWhispr Assistant を設定",
+        "title": "Writely Assistant を設定",
         "titleLineOne": "セットアップ",
-        "titleLineTwo": "OpenWhispr Assistant",
-        "description": "話しかけるだけで、OpenWhispr Assistant が結果を書き上げます。"
+        "titleLineTwo": "Writely Assistant",
+        "description": "話しかけるだけで、Writely Assistant が結果を書き上げます。"
       },
       "hotkey": {
         "capture": "使用したいキーを押してください",
@@ -243,16 +243,16 @@
         "title": "最初のディクテーションを試す",
         "titleLineOne": "最初の",
         "titleLineTwo": "ディクテーションを試す",
-        "description": "{{hotkey}} を押して話し始めてください。OpenWhispr が音声をテキストに変換します。",
-        "founder": "こんにちは、OpenWhispr創業者のゲイブです",
+        "description": "{{hotkey}} を押して話し始めてください。Writely が音声をテキストに変換します。",
+        "founder": "こんにちは、Writely創業者のゲイブです",
         "prompt": "「初めてディクテーションを試しています」と話してみてください。",
         "placeholder": "ここにディクテーションが表示されます…"
       },
       "assistantDemo": {
-        "title": "OpenWhispr Assistant を使ってみる",
+        "title": "Writely Assistant を使ってみる",
         "titleLineOne": "ご紹介します",
-        "titleLineTwo": "OpenWhispr Assistant",
-        "description": "話しかけるだけで、OpenWhispr Assistant が結果を書き上げます。",
+        "titleLineTwo": "Writely Assistant",
+        "description": "話しかけるだけで、Writely Assistant が結果を書き上げます。",
         "senderName": "Eren Lauren",
         "senderEmail": "eren32@gmail.com",
         "recipientLabel": "John Doe 宛て",
@@ -267,13 +267,13 @@
         "typing": "入力中…"
       },
       "notes": {
-        "title": "ボットなしで会議を録音 — OpenWhispr Notes",
+        "title": "ボットなしで会議を録音 — Writely Notes",
         "titleLineOne": "ボットなしでミーティングを録音",
-        "titleLineTwoPrefix": "OpenWhispr の",
+        "titleLineTwoPrefix": "Writely の",
         "titleLineTwoBrand": "Notes",
-        "description": "OpenWhispr は会話をわかりやすいノートに変換します。ミーティングボットが通話に参加することはありません。",
+        "description": "Writely は会話をわかりやすいノートに変換します。ミーティングボットが通話に参加することはありません。",
         "hero": {
-          "description": "ミーティングを録音すれば、OpenWhispr が会話をわかりやすく整理されたノートに変換します。",
+          "description": "ミーティングを録音すれば、Writely が会話をわかりやすく整理されたノートに変換します。",
           "chat": "ミーティングノートとチャット",
           "transcript": "全文の文字起こしを確認",
           "speakers": "誰が何を話したかを確認"
@@ -289,8 +289,8 @@
         }
       },
       "setupChoice": {
-        "title": "OpenWhispr のセットアップを選択",
-        "titleLineOne": "OpenWhispr の",
+        "title": "Writely のセットアップを選択",
+        "titleLineOne": "Writely の",
         "titleLineTwo": "セットアップを選択",
         "description": "働き方に合った方法を選んでください。",
         "unavailable": {
@@ -298,7 +298,7 @@
           "description": "ワークスペースのポリシーでは、文字起こしと AI の完全なセットアップが許可されていません。管理者にお問い合わせください。"
         },
         "cloud": {
-          "title": "OpenWhispr Cloud",
+          "title": "Writely Cloud",
           "description": "毎週 2,000 語を無料で利用できます。設定はデバイス間で同期されます。",
           "continue": "無料で続ける",
           "signIn": "サインインしてクラウドを使う",
@@ -448,14 +448,14 @@
       "accessibilityTitle": "アクセシビリティ",
       "accessibilityDescription": "完成したテキストを、今使っているアプリ（ドキュメント、メール、チャット）に直接入力します。",
       "testAndGrant": "テストして許可",
-      "requiredForApp": "OpenWhispr の動作に必要です",
+      "requiredForApp": "Writely の動作に必要です",
       "microphoneRequired": "マイクへのアクセスが必要です",
       "openSystemSettings": "システム設定を開く",
       "systemAudioTitle": "システムオーディオ",
       "systemAudioDescription": "会議レコーダーが通話の相手側の音声（会議、講義、ポッドキャストなど）を聴けるようにします。後から設定で有効にできます。",
       "optional": "任意",
       "recommended": "推奨",
-      "accessibilityTroubleshooting": "システム設定 → アクセシビリティで、OpenWhisprのスイッチをオフにしてから再度オンにしてください。OpenWhisprがリストに表示されていない場合は、+ をクリックしてアプリケーションフォルダから追加してください。それでも解決しませんか？support@openwhispr.com までメールでお問い合わせください。"
+      "accessibilityTroubleshooting": "システム設定 → アクセシビリティで、Writelyのスイッチをオフにしてから再度オンにしてください。Writelyがリストに表示されていない場合は、+ をクリックしてアプリケーションフォルダから追加してください。それでも解決しませんか？support@openwhispr.com までメールでお問い合わせください。"
     },
     "transcription": {
       "title": "文字起こし設定",
@@ -491,18 +491,18 @@
       "optionalNote": "任意です。設定からいつでも追加・変更できます。"
     },
     "connectivity": {
-      "title": "このネットワークから OpenWhispr Cloud に接続できません",
+      "title": "このネットワークから Writely Cloud に接続できません",
       "body": "{{cause}} ローカルエンジンに切り替えるか、続行して後でもう一度お試しください。",
       "useLocal": "ローカルエンジンを使う",
       "continue": "そのまま続行"
     },
     "useCase": {
-      "title": "OpenWhispr をどのように使いますか？",
-      "titleLineOne": "OpenWhisprを",
+      "title": "Writely をどのように使いますか？",
+      "titleLineOne": "Writelyを",
       "titleLineTwo": "どう使いますか？",
       "description": "当てはまるものをすべて選んでください。それに合わせてセットアップします。",
       "noteLabel": "他に伝えておきたいことはありますか？",
-      "notePlaceholder": "OpenWhispr の使い方を教えてください（任意）",
+      "notePlaceholder": "Writely の使い方を教えてください（任意）",
       "proceedToSetup": "設定に進む",
       "options": {
         "dictation": {
@@ -535,13 +535,13 @@
     "meeting": {
       "title": "会議メモ",
       "description": "会議を記録して要約します",
-      "autoDetect": "OpenWhispr は会議中であることを自動的に検出し、メモの開始を提案します。あなたの操作なしに録音されることはありません。",
+      "autoDetect": "Writely は会議中であることを自動的に検出し、メモの開始を提案します。あなたの操作なしに録音されることはありません。",
       "hotkeyLabel": "会議ホットキー",
       "hotkeyHint": "任意 — 会議中に押すとすぐにメモを開始できます。"
     },
     "finish": {
       "title": "準備完了",
-      "cloudDescription": "OpenWhispr Cloud をご利用中です — 高速・高精度、データ保持なし、毎週 2,000 ワード無料。すべてを端末内で処理したい場合は、設定からローカル処理に切り替えられます。",
+      "cloudDescription": "Writely Cloud をご利用中です — 高速・高精度、データ保持なし、毎週 2,000 ワード無料。すべてを端末内で処理したい場合は、設定からローカル処理に切り替えられます。",
       "localDescription": "ローカル処理またはご自身の API キーで設定済みです。音声の処理方法はいつでも設定から変更できます。",
       "cleanupNote": "AI によるテキスト整形は適切な初期設定で動作します。設定からいつでも調整できます。",
       "openSettings": "設定を開く",
@@ -575,7 +575,7 @@
   "streaming": {
     "errors": {
       "cloudUnreachable": {
-        "title": "OpenWhispr Cloud に接続できません",
+        "title": "Writely Cloud に接続できません",
         "generic": "ネットワーク要求に失敗しました。接続を確認してください。",
         "dnsBlocked": "DNS が the server を解決できません — 広告ブロッカーやフィルターに遮断されている可能性があります。",
         "refused": "接続が拒否されました — ファイアウォールまたは VPN の可能性があります。",
@@ -588,7 +588,7 @@
   "controlPanel": {
     "updateRequiredByOrg": {
       "title": "アップデートが必要です",
-      "description": "組織では OpenWhispr {{version}} 以降が必要です。アプリを更新してください。"
+      "description": "組織では Writely {{version}} 以降が必要です。アプリを更新してください。"
     },
     "update": {
       "readyTitle": "アップデートの準備完了",
@@ -596,7 +596,7 @@
       "problemTitle": "アップデートで問題が発生しました",
       "problemDescription": "アップデートを完了できませんでした。後でもう一度お試しください。",
       "installTitle": "アップデートをインストール",
-      "installDescription": "OpenWhispr はアップデートを適用するために再起動します。作業中のデータは保存されます。",
+      "installDescription": "Writely はアップデートを適用するために再起動します。作業中のデータは保存されます。",
       "couldNotInstallTitle": "アップデートをインストールできませんでした",
       "couldNotInstallDescription": "問題が発生しました。もう一度お試しください。",
       "couldNotDownloadTitle": "アップデートをダウンロードできませんでした",
@@ -611,7 +611,7 @@
     },
     "accessibilityMissing": {
       "title": "アクセシビリティの許可が必要です",
-      "description": "OpenWhispr が正しく動作するにはアクセシビリティの許可が必要です。以下で有効にしてください。"
+      "description": "Writely が正しく動作するにはアクセシビリティの許可が必要です。以下で有効にしてください。"
     },
     "billing": {
       "pastDueTitle": "お支払いを処理できませんでした",
@@ -677,8 +677,8 @@
       "retryTranslationMode": "翻訳モード"
     },
     "cloudMigration": {
-      "title": "OpenWhispr Cloud へようこそ",
-      "description": "より高速で正確な文字起こしのために OpenWhispr Cloud に切り替えました。以前の設定は保存されています。設定からいつでも戻せます。",
+      "title": "Writely Cloud へようこそ",
+      "description": "より高速で正確な文字起こしのために Writely Cloud に切り替えました。以前の設定は保存されています。設定からいつでも戻せます。",
       "viewSettings": "設定を表示"
     },
     "aiCta": {
@@ -789,7 +789,7 @@
           "modelNotFound": "AWS Bedrock はリージョン {{region}} で選択したモデルを見つけられませんでした。モデル ID とそのリージョンでの提供状況を確認してください。",
           "configurationRejected": "AWS Bedrock はリージョン {{region}} のモデル設定を拒否しました。モデル ID、推論プロファイル、リージョンを確認してください。",
           "notConfigured": "AWS Bedrock が正しく設定されていません。リージョンと AWS 認証情報を確認してください。",
-          "serviceUnavailable": "需要が高いため、AWS Bedrock は一時的に利用できません。これは OpenWhispr の障害ではなく AWS サービス側の問題です。数分後にもう一度お試しください。",
+          "serviceUnavailable": "需要が高いため、AWS Bedrock は一時的に利用できません。これは Writely の障害ではなく AWS サービス側の問題です。数分後にもう一度お試しください。",
           "throttled": "リクエストが多すぎるため、AWS Bedrock は一時的にリクエストを制限しています。少し待ってから再試行してください。続く場合は、AWS 管理者に Bedrock の使用量とクォータの確認を依頼してください。",
           "timeout": "AWS Bedrock が時間内に応答しませんでした。もう一度お試しください。続く場合は、インターネット接続と AWS Bedrock サービスの状態を確認してください。",
           "network": "AWS Bedrock に接続できませんでした。インターネット接続を確認して、もう一度お試しください。",
@@ -895,7 +895,7 @@
         "description": "録音の一部を文字起こしできませんでした。"
       },
       "errorDescriptions": {
-        "sessionExpired": "OpenWhispr Cloud のセッションが利用できません。「設定」から再度サインインしてください。",
+        "sessionExpired": "Writely Cloud のセッションが利用できません。「設定」から再度サインインしてください。",
         "offline": "オフラインです。クラウド文字起こしにはインターネット接続が必要です。",
         "dailyLimitReached": "本日の文字起こし上限に達しました。明日もう一度お試しいただくか、プランをアップグレードしてください。",
         "providerRateLimited": "文字起こしプロバイダーがリクエストを制限しました。しばらく待ってからもう一度お試しください。",
@@ -914,8 +914,8 @@
         "notAppliedTitle": "選択範囲の編集を適用できませんでした",
         "changed": "処理中に選択したテキストまたは対象アプリが変更されました。置換は行われていません。",
         "expired": "選択範囲の編集が期限切れになりました。テキストを選択し直して再試行してください。",
-        "pasteFailed": "OpenWhispr は編集を生成しましたが、選択したテキストを置換できませんでした。",
-        "unavailable": "OpenWhispr は選択したテキストを安全に読み取れませんでした。アクセシビリティまたは入力自動化の権限を確認してください。",
+        "pasteFailed": "Writely は編集を生成しましたが、選択したテキストを置換できませんでした。",
+        "unavailable": "Writely は選択したテキストを安全に読み取れませんでした。アクセシビリティまたは入力自動化の権限を確認してください。",
         "tooLarge": "選択範囲が大きすぎます。6,000文字以内を選択してください。",
         "reasoningFailed": "AI は選択範囲の編集を完了できませんでした。元のテキストは変更されていません。"
       }
@@ -990,7 +990,7 @@
       "micErrors": {
         "accessFailed": "マイクへのアクセスに失敗しました。もう一度お試しください。",
         "noMicrophones": "マイクが検出されませんでした。{{settingsPath}} でマイクを接続または選択してください。",
-        "permissionDenied": "権限が拒否されました。{{privacyPath}} を開いて OpenWhispr を許可してください。",
+        "permissionDenied": "権限が拒否されました。{{privacyPath}} を開いて Writely を許可してください。",
         "couldNotStart": "選択したマイクを開始できませんでした。{{settingsPath}} で入力デバイスを選択してから、テストを再実行してください。",
         "noActiveInput": "アクティブな音声入力が見つかりませんでした。{{settingsPath}} でマイクを選択してください。",
         "unknown": "マイクへのアクセスに失敗しました: {{error}}。別の入力デバイスを選択してもう一度お試しください。",
@@ -1019,8 +1019,8 @@
         "accessibilityNeeded": "テキストの自動貼り付けを有効にするには、システム設定でアクセシビリティの権限を許可してください。",
         "windowsReady": "Windows では自動貼り付けに特別な権限は必要ありません。準備完了です！",
         "linuxReadyWithMethod": "{{method}} を使用した自動貼り付けが利用可能です。準備完了です！",
-        "waylandClipboardMode": "この Wayland セッションでは自動貼り付けが利用できません。OpenWhispr はテキストをクリップボードにコピーしますので、Ctrl+V で貼り付けてください。",
-        "optionalPasteTool": "自動貼り付けには {{tool}} をインストールしてください:\n\n{{installCmd}}{{waylandNote}}\n\nインストールしなくても OpenWhispr は使用できます。テキストがクリップボードにコピーされるので、Ctrl+V で貼り付けてください。"
+        "waylandClipboardMode": "この Wayland セッションでは自動貼り付けが利用できません。Writely はテキストをクリップボードにコピーしますので、Ctrl+V で貼り付けてください。",
+        "optionalPasteTool": "自動貼り付けには {{tool}} をインストールしてください:\n\n{{installCmd}}{{waylandNote}}\n\nインストールしなくても Writely は使用できます。テキストがクリップボードにコピーされるので、Ctrl+V で貼り付けてください。"
       },
       "alerts": {
         "accessibilityNeeded": "アクセシビリティの権限が必要です！システム設定で許可してください。"
@@ -1033,7 +1033,7 @@
         "defaultPasteTool": "xdotool",
         "xdotoolXwayland": "xdotool（XWayland アプリ）"
       },
-      "accessibilityTestText": "OpenWhispr アクセシビリティテスト",
+      "accessibilityTestText": "Writely アクセシビリティテスト",
       "warning": {
         "messages": {
           "macos": "サウンド設定で入力デバイスを確認してください",
@@ -1109,7 +1109,7 @@
       "emailRequired": "SSO を使用するには勤務先のメールアドレスを入力してください。",
       "failed": "シングルサインオンに失敗しました。もう一度お試しください。",
       "companySignInTitle": "会社のサインインを使用",
-      "requiredDescription": "{{domain}} では OpenWhispr に SSO が必須です。",
+      "requiredDescription": "{{domain}} では Writely に SSO が必須です。",
       "availableDescription": "{{domain}} のアカウントは会社の SSO に対応しています。",
       "useEmailInstead": "メールアドレスとパスワードを使用"
     },
@@ -1121,7 +1121,7 @@
       "protocolUnavailable": "ブラウザでのサインインを利用できません — システムの「既定のアプリ」設定で openwhispr:// プロトコルを再登録してください。"
     },
     "welcomeSubtitle": "すべてを声で",
-    "welcomeTitle": "OpenWhispr へようこそ"
+    "welcomeTitle": "Writely へようこそ"
   },
   "cleanupPrompt": "クリーンアップ",
   "developerSection": {
@@ -1344,10 +1344,10 @@
     "recheckChecking": "確認中...",
     "title": "自動貼り付け",
     "usingMethodPrefix": "使用中:",
-    "waylandClipboardDescription": "この Wayland セッションでは自動貼り付けが利用できません。OpenWhispr はテキストをクリップボードにコピーしますので、Ctrl+V で手動で貼り付けてください。",
+    "waylandClipboardDescription": "この Wayland セッションでは自動貼り付けが利用できません。Writely はテキストをクリップボードにコピーしますので、Ctrl+V で手動で貼り付けてください。",
     "waylandClipboardTitle": "Wayland でのクリップボードモード",
     "windowsReady": "Windows は自動貼り付けに標準対応しています。設定は不要です！",
-    "withoutToolPrefix": "このツールがない場合、OpenWhispr はテキストをクリップボードにコピーします。Ctrl+V で手動で貼り付けてください。",
+    "withoutToolPrefix": "このツールがない場合、Writely はテキストをクリップボードにコピーします。Ctrl+V で手動で貼り付けてください。",
     "wtypeFallbackDescription": "この wlroots 系コンポジターでは wtype が推奨される自動貼り付け方法です。代替手段も利用できますが、信頼性が低い場合があります。",
     "xwaylandAppsOnly": "自動貼り付けは XWayland アプリのみで動作します"
   },
@@ -1398,7 +1398,7 @@
       "none": "なし",
       "outputLabel": "出力",
       "processing": "処理中...",
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Writely Cloud",
       "providerLabel": "プロバイダー",
       "run": "テスト実行",
       "customEndpoint": "カスタムエンドポイント",
@@ -1543,7 +1543,7 @@
           "price": "$0",
           "period": "永久",
           "features": [
-            "## OpenWhispr Cloud",
+            "## Writely Cloud",
             "週2,000ワードの文字起こし",
             "月5時間の会議録音",
             "## 永久無料",
@@ -1661,7 +1661,7 @@
         "button": "アカウントを削除",
         "deleting": "削除中...",
         "title": "アカウントを削除しますか？",
-        "description": "OpenWhispr アカウントと個人データを完全に削除します。ワークスペース所有のコンテンツと他のローカルユーザーのデータはこのデバイスに残ります。",
+        "description": "Writely アカウントと個人データを完全に削除します。ワークスペース所有のコンテンツと他のローカルユーザーのデータはこのデバイスに残ります。",
         "confirmText": "アカウントを削除",
         "eraseDeviceLabel": "このデバイス上のすべてのデータも消去する",
         "eraseDeviceDescription": "すべてのローカルユーザーのノートとワークスペースキャッシュ、ダウンロード済みモデル、設定、カレンダー接続、認証情報、録音を削除します。",
@@ -1739,7 +1739,7 @@
       "enableTextCleanup": "テキスト補正を有効にする",
       "enableTextCleanupDescription": "AI がフィラーワードを除去し、文法と句読点を整える",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Writely Cloud",
         "providers": "クラウドプロバイダー",
         "local": "ローカル",
         "selfHosted": "セルフホスト",
@@ -1750,13 +1750,13 @@
         "enterprise": "エンタープライズ",
         "enterpriseDesc": "組織のクラウドアカウントを使用 (AWS, Azure, GCP)。"
       },
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Writely Cloud",
       "openwhisprCloudDescription": "信頼できる精度。設定不要。",
       "title": "AI テキスト補正",
       "toasts": {
         "switchedCloud": {
-          "description": "テキスト補正に OpenWhispr のクラウドサービスを使用します。",
-          "title": "OpenWhispr Cloud に切り替えました"
+          "description": "テキスト補正に Writely のクラウドサービスを使用します。",
+          "title": "Writely Cloud に切り替えました"
         },
         "switchedCustom": {
           "description": "独自のプロバイダーと API キーを設定してください。",
@@ -1844,7 +1844,7 @@
       "appearance": {
         "auto": "自動",
         "dark": "ダーク",
-        "description": "OpenWhispr の外観を設定",
+        "description": "Writely の外観を設定",
         "light": "ライト",
         "theme": "テーマ",
         "themeDescription": "ライト、ダーク、またはシステムに合わせる",
@@ -1872,8 +1872,8 @@
         "linuxPttSetupDescription": "キーボード入力デバイスへのアクセス権が必要です。",
         "linuxPttSetupNote": "コマンド実行後、ログアウトして再度ログインしてください。",
         "hyprlandConfigWriteWarningTitle": "Hyprland のキーバインドは永続化されません",
-        "hyprlandConfigWriteWarningDescription": "OpenWhispr は {{path}} に書き込めないため、Hyprland の設定を再読み込みするとキーバインドは維持されません。ファイルが存在し、書き込み可能であることを確認してください。",
-        "hyprlandUnbindDescription": "Hyprland では、OpenWhispr が選択したショートカットを使用します。同じキーの組み合わせを使う既存の Hyprland バインドは、OpenWhispr がショートカットを登録すると解除されます。"
+        "hyprlandConfigWriteWarningDescription": "Writely は {{path}} に書き込めないため、Hyprland の設定を再読み込みするとキーバインドは維持されません。ファイルが存在し、書き込み可能であることを確認してください。",
+        "hyprlandUnbindDescription": "Hyprland では、Writely が選択したショートカットを使用します。同じキーの組み合わせを使う既存の Hyprland バインドは、Writely がショートカットを登録すると解除されます。"
       },
       "meetingHotkey": {
         "title": "ミーティングモードホットキー",
@@ -1899,7 +1899,7 @@
       },
       "notifications": {
         "title": "通知",
-        "description": "OpenWhispr が表示できる通知を設定します",
+        "description": "Writely が表示できる通知を設定します",
         "disableAll": "すべての通知を無効にする",
         "disableAllDescription": "エラーメッセージ以外をすべて消音にする",
         "meetingDetection": "会議の検出",
@@ -1918,14 +1918,14 @@
       },
       "startup": {
         "launchAtLogin": "ログイン時に起動",
-        "launchAtLoginDescription": "ログイン時に OpenWhispr をバックグラウンドで起動します",
+        "launchAtLoginDescription": "ログイン時に Writely をバックグラウンドで起動します",
         "title": "起動設定",
-        "description": "OpenWhispr の起動時の動作を制御",
+        "description": "Writely の起動時の動作を制御",
         "startMinimized": "最小化で起動",
         "startMinimizedDescription": "コントロールパネルウィンドウを表示せずに起動",
         "needsApproval": {
           "title": "システム設定での許可が必要です",
-          "description": "macOS は OpenWhispr をログイン項目として登録しましたが、「ログイン項目」での許可を待っています。",
+          "description": "macOS は Writely をログイン項目として登録しましたが、「ログイン項目」での許可を待っています。",
           "action": "ログイン項目を開く"
         }
       },
@@ -1977,7 +1977,7 @@
           "group": {
             "step1Title": "ユーザーを input グループに追加",
             "step2Title": "ログアウトして再ログイン",
-            "step2Desc": "グループの変更は新しいセッションでのみ有効になります。デスクトップからログアウトし、再ログインしてから OpenWhispr を開き直してください。"
+            "step2Desc": "グループの変更は新しいセッションでのみ有効になります。デスクトップからログアウトし、再ログインしてから Writely を開き直してください。"
           },
           "service": {
             "step1Title": "サービスディレクトリを作成",
@@ -2001,7 +2001,7 @@
           "manualTitle": "設定に以下を追加してください",
           "manualDesc": "ご自身で設定してからリビルドしてください。",
           "flakeTitle": "flakeからインストールする場合",
-          "flakeDesc": "flakeからOpenWhisprをインストールする場合、programs.openwhispr.enableを有効にするとydotool、uinputモジュール、グループのメンバーシップが自動で設定されます。",
+          "flakeDesc": "flakeからWritelyをインストールする場合、programs.openwhispr.enableを有効にするとydotool、uinputモジュール、グループのメンバーシップが自動で設定されます。",
           "rebuildNote": "sudo nixos-rebuild switchを実行し、グループの変更と/dev/uinputのルールを反映させるためにログアウト後に再ログインしてください。<you>はあなたのユーザー名に置き換えてください。"
         }
       },
@@ -2034,7 +2034,7 @@
           },
           "installUpdate": {
             "confirmText": "インストールして再起動",
-            "description": "OpenWhispr はアップデートを適用するために再起動します。",
+            "description": "Writely はアップデートを適用するために再起動します。",
             "title": "アップデートをインストール"
           },
           "noUpdates": {
@@ -2069,13 +2069,13 @@
     "permissions": {
       "accessibilityDescription": "文字起こし後の自動貼り付けに必要",
       "accessibilityTitle": "アクセシビリティ",
-      "description": "OpenWhispr の正常動作に必要なシステム権限をテスト・管理",
+      "description": "Writely の正常動作に必要なシステム権限をテスト・管理",
       "microphoneDescription": "ディクテーションと文字起こしのためにあなたの声を録音します",
       "microphoneTitle": "マイク",
       "resetAccessibility": {
-        "description": "OpenWhispr をアクセシビリティの権限から削除します。システム設定 > プライバシーとセキュリティ > アクセシビリティ で再度許可する必要があります。",
+        "description": "Writely をアクセシビリティの権限から削除します。システム設定 > プライバシーとセキュリティ > アクセシビリティ で再度許可する必要があります。",
         "label": "アクセシビリティの権限をリセット",
-        "rowDescription": "アプリの再インストールや再ビルド後の問題を修正するために、システム設定で OpenWhispr を削除してから再追加",
+        "rowDescription": "アプリの再インストールや再ビルド後の問題を修正するために、システム設定で Writely を削除してから再追加",
         "title": "アクセシビリティの権限をリセット"
       },
       "optional": "任意",
@@ -2097,7 +2097,7 @@
       "description": "デバイスからのデータ送信を管理します。初期設定ではすべてオフです。",
       "title": "プライバシー",
       "usageAnalytics": "使用状況の分析",
-      "usageAnalyticsDescription": "匿名のパフォーマンスデータを共有して OpenWhispr の改善にご協力ください。文字起こしの内容は送信されません。タイミングとエラーデータのみです。",
+      "usageAnalyticsDescription": "匿名のパフォーマンスデータを共有して Writely の改善にご協力ください。文字起こしの内容は送信されません。タイミングとエラーデータのみです。",
       "dataRetention": "データ保持",
       "dataRetentionDescription": "文字起こしと音声を履歴にローカル保存します。無効にすると、文字起こしは貼り付けられますが保存されません。",
       "transcriptRetention": "文字起こしの保持",
@@ -2153,9 +2153,9 @@
     "transcription": {
       "customSetup": "カスタム設定",
       "customSetupDescription": "独自のプロバイダーと API キーを使用。",
-      "description": "OpenWhispr の音声文字起こし方法を選択",
+      "description": "Writely の音声文字起こし方法を選択",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Writely Cloud",
         "providers": "クラウドプロバイダー",
         "local": "ローカル",
         "selfHosted": "セルフホスト",
@@ -2164,13 +2164,13 @@
         "localDesc": "端末上のモデル。完全プライベート。",
         "selfHostedDesc": "自前サーバーをネットワーク上に。"
       },
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Writely Cloud",
       "openwhisprCloudDescription": "信頼できる精度。設定不要。",
       "title": "音声テキスト変換",
       "toasts": {
         "switchedCloud": {
-          "description": "文字起こしに OpenWhispr のクラウドサービスを使用します。",
-          "title": "OpenWhispr Cloud に切り替えました"
+          "description": "文字起こしに Writely のクラウドサービスを使用します。",
+          "title": "Writely Cloud に切り替えました"
         },
         "switchedCustom": {
           "description": "独自のプロバイダーと API キーを設定してください。",
@@ -2736,7 +2736,7 @@
     },
     "structureIntro": {
       "title": "ノートの保存場所",
-      "description": "OpenWhispr は個人的な考えと共同作業を分け、適切な人だけがノートを見られるようにします。",
+      "description": "Writely は個人的な考えと共同作業を分け、適切な人だけがノートを見られるようにします。",
       "personal": {
         "title": "個人スペース",
         "description": "ここのフォルダーとノートは自分だけが見ることができます。"
@@ -2889,7 +2889,7 @@
       "newFolder": "新しいフォルダ",
       "folderName": "フォルダ名",
       "create": "作成",
-      "openwhisprCloud": "OpenWhispr Cloud",
+      "openwhisprCloud": "Writely Cloud",
       "custom": "カスタム",
       "selectFolder": "フォルダを選択",
       "transcriptionFailed": "文字起こしに失敗しました",
@@ -2901,15 +2901,15 @@
       "fileTooLarge": "このファイルは 500 MB の制限を超えています。",
       "largeFileNote": "大容量ファイルは分割され、並列で文字起こしされます。",
       "chunkProgress": "パート {{completed}} / {{total}} を文字起こし中...",
-      "paidPlanRequired": "25 MB を超えるファイルのクラウド文字起こしには有料プランが必要です。大容量ファイルは OpenWhispr Cloud で信頼性の高い高品質な結果を得られます。",
+      "paidPlanRequired": "25 MB を超えるファイルのクラウド文字起こしには有料プランが必要です。大容量ファイルは Writely Cloud で信頼性の高い高品質な結果を得られます。",
       "byokTooLarge": "サードパーティの API キーは {{size}} MB までのファイルのみ対応しています。",
-      "byokTooLargeDetail": "{{size}} MB を超えるファイルは、OpenWhispr Cloud が分割・並列処理・結合を行います。サードパーティの制限に依存せず、信頼性の高い結果が得られます。",
-      "byokTooLargeNeedsAccount": "アカウントを作成し、有料プランにアップグレードすると、OpenWhispr Cloud でより大きなファイルを文字起こしできます。",
-      "byokTooLargeNeedsUpgrade": "有料プランにアップグレードすると、OpenWhispr Cloud でより大きなファイルを文字起こしできます。",
-      "switchToCloudForLargeFiles": "このファイルを文字起こしするには OpenWhispr Cloud に切り替えてください。",
+      "byokTooLargeDetail": "{{size}} MB を超えるファイルは、Writely Cloud が分割・並列処理・結合を行います。サードパーティの制限に依存せず、信頼性の高い結果が得られます。",
+      "byokTooLargeNeedsAccount": "アカウントを作成し、有料プランにアップグレードすると、Writely Cloud でより大きなファイルを文字起こしできます。",
+      "byokTooLargeNeedsUpgrade": "有料プランにアップグレードすると、Writely Cloud でより大きなファイルを文字起こしできます。",
+      "switchToCloudForLargeFiles": "このファイルを文字起こしするには Writely Cloud に切り替えてください。",
       "createAccount": "アカウント作成",
       "upgrade": "アップグレード",
-      "switchToCloud": "OpenWhispr Cloud",
+      "switchToCloud": "Writely Cloud",
       "orDivider": "または",
       "urlPlaceholder": "YouTubeまたは音声URLを貼り付け",
       "urlDownloading": "音声をダウンロード中...",
@@ -3081,7 +3081,7 @@
     "clearAll": "すべてクリア",
     "clearTitle": "辞書をクリアしますか？",
     "clearDescription": "カスタム辞書のすべての単語が削除されます。この操作は元に戻せません。",
-    "addPlaceholder": "カンマ区切りで単語を追加 — OpenWhispr、Supabase、ARR など",
+    "addPlaceholder": "カンマ区切りで単語を追加 — Writely、Supabase、ARR など",
     "add": "追加",
     "importWords": "単語をインポート",
     "importPlaceholder": "カンマまたは改行区切りの単語を貼り付け...",
@@ -3110,7 +3110,7 @@
       "duplicate": "このトリガーのスニペットは既に存在します",
       "emptyTitle": "同じことを言うのは",
       "emptyTitleAccent": "一度だけ",
-      "emptyDescription": "トリガーワードを話すと、OpenWhisprが保存した内容に置き換えます。URL、自己紹介、署名、プロンプトなど。",
+      "emptyDescription": "トリガーワードを話すと、Writelyが保存した内容に置き換えます。URL、自己紹介、署名、プロンプトなど。",
       "new": "新規スニペット",
       "examples": {
         "linkedinTrigger": "私のLinkedIn",
@@ -3195,7 +3195,7 @@
     },
     "tryAgain": "再試行",
     "card": {
-      "brand": "OpenWhispr",
+      "brand": "Writely",
       "signalId": "Signal ID",
       "audioSignature": "あなたの音声シグネチャー",
       "stop": "停止",
@@ -3255,7 +3255,7 @@
     "submitBug": "バグを報告"
   },
   "postMigration": {
-    "title": "OpenWhispr へおかえりなさい",
+    "title": "Writely へおかえりなさい",
     "description": "ノートと設定は以前のバージョンから引き継がれています。ただし macOS はこれを新しいアプリとして扱うため、いくつかの権限を改めて付与していただく必要があります。",
     "done": "完了",
     "remindLater": "後で通知"
@@ -3278,8 +3278,8 @@
     "ready": "GPUアクセラレーション準備完了",
     "activating": "GPU を有効化中...",
     "activationFailed": "GPU アクセラレーションを利用できません",
-    "activationFailedDescription": "OpenWhispr は CPU 文字起こしに切り替えました。",
-    "reasoningActivationFailedDescription": "OpenWhispr は CPU 処理に切り替えました。",
+    "activationFailedDescription": "Writely は CPU 文字起こしに切り替えました。",
+    "reasoningActivationFailedDescription": "Writely は CPU 処理に切り替えました。",
     "retryActivation": "GPU アクセラレーションを再試行",
     "remove": "削除",
     "dismiss": "後で",
@@ -3299,11 +3299,11 @@
       "undo": "元に戻す",
       "accessibilityMissing": {
         "title": "アクセシビリティの許可が必要です",
-        "description": "OpenWhispr がホットキーの検出とテキストの貼り付けを行うには、アクセシビリティの許可が必要です。コントロールパネルで有効にしてください。"
+        "description": "Writely がホットキーの検出とテキストの貼り付けを行うには、アクセシビリティの許可が必要です。コントロールパネルで有効にしてください。"
       },
       "gpuFallback": {
         "title": "GPU アクセラレーションを利用できません",
-        "description": "OpenWhispr は CPU 文字起こしに切り替えました。",
+        "description": "Writely は CPU 文字起こしに切り替えました。",
         "retry": "GPU を再試行"
       },
       "gpuPackMigration": {
@@ -3346,11 +3346,11 @@
       "visionModelDescription": "スクリーンショット付きのコマンドを、画像対応の別モデルに振り分けます。",
       "permissionTitle": "画面収録",
       "permissionDescription": "画面をキャプチャするには macOS の画面収録の許可が必要です。",
-      "relaunchHint": "画面収録の許可は OpenWhispr の実行中に付与されました。スクリーンショットのキャプチャを開始するには、OpenWhispr を終了して再度開いてください。"
+      "relaunchHint": "画面収録の許可は Writely の実行中に付与されました。スクリーンショットのキャプチャを開始するには、Writely を終了して再度開いてください。"
     },
     "modes": {
-      "openwhispr": "OpenWhispr Cloud",
-      "openwhisprDesc": "OpenWhispr が管理するエージェントを使用。API キーは不要です。",
+      "openwhispr": "Writely Cloud",
+      "openwhisprDesc": "Writely が管理するエージェントを使用。API キーは不要です。",
       "providers": "自分の API キーを使用",
       "providersDesc": "自分の API キーで OpenAI、Anthropic、Gemini、Groq に接続します。",
       "local": "ローカル",
@@ -3371,7 +3371,7 @@
       "systemPromptDescription": "エージェントへのカスタム指示",
       "systemPromptPlaceholder": "カスタムシステムプロンプトを入力...",
       "modes": {
-        "openwhispr": "OpenWhispr Cloud",
+        "openwhispr": "Writely Cloud",
         "providers": "クラウドプロバイダー",
         "local": "ローカル",
         "selfHosted": "セルフホスト",
@@ -3457,7 +3457,7 @@
       "disconnectConfirm": "{{email}} を切断しますか？",
       "disconnectDescription": "このカレンダーからの会議メモは記録されなくなります。",
       "systemAudioRequired": "システムオーディオの権限が必要です",
-      "systemAudioDescription": "会議を文字起こしするには、OpenWhispr に他の参加者の音声を録音するためのシステムオーディオの権限が必要です。画面を録画することはありません。システム設定に移動して有効にします。",
+      "systemAudioDescription": "会議を文字起こしするには、Writely に他の参加者の音声を録音するためのシステムオーディオの権限が必要です。画面を録画することはありません。システム設定に移動して有効にします。",
       "openSettings": "システム設定を開く",
       "connectFailed": "接続に失敗しました",
       "connectFailedDescription": "Google Calendar への接続中にエラーが発生しました。もう一度お試しください。"
@@ -3487,10 +3487,10 @@
       "disconnectConfirm": "Apple カレンダーを切断しますか？",
       "disconnectDescription": "Apple カレンダーからの会議メモは記録されなくなります。",
       "permissionDenied": "カレンダーへのアクセスが必要です",
-      "permissionDeniedDescription": "会議を検出するには、OpenWhispr にカレンダーへのアクセスが必要です。システム設定の「プライバシーとセキュリティ」→「カレンダー」で OpenWhispr を有効にしてください。",
+      "permissionDeniedDescription": "会議を検出するには、Writely にカレンダーへのアクセスが必要です。システム設定の「プライバシーとセキュリティ」→「カレンダー」で Writely を有効にしてください。",
       "openSettings": "システム設定を開く",
       "connectFailed": "接続に失敗しました",
-      "connectFailedDescription": "Calendar.app への接続中にエラーが発生しました。OpenWhispr を再起動してもう一度お試しください。"
+      "connectFailedDescription": "Calendar.app への接続中にエラーが発生しました。Writely を再起動してもう一度お試しください。"
     },
     "sections": {
       "calendar": "カレンダー",
@@ -3509,13 +3509,13 @@
     "mcp": {
       "title": "メモをAIツールに持ち込みましょう",
       "description": "Claude、ChatGPT、Cursor内でメモを使ってチャット、検索、作業ができます。",
-      "step1": "AIツールで、公開URLを使用してOpenWhispr MCPを追加します",
+      "step1": "AIツールで、公開URLを使用してWritely MCPを追加します",
       "step2": "上のセクションで必要なスコープを持つAPIキーを作成します。",
       "step3": "キーを Authorization ヘッダーとして貼り付けて接続します。",
       "learnMore": "詳細",
       "viewPlans": "プランを表示",
       "copyUrl": "MCP URLをコピー",
-      "proRequired": "OpenWhispr を Claude、ChatGPT、Cursor に接続するには、有料プランへのアップグレードが必要です。",
+      "proRequired": "Writely を Claude、ChatGPT、Cursor に接続するには、有料プランへのアップグレードが必要です。",
       "copied": "コピーしました"
     },
     "cli": {
@@ -3529,7 +3529,7 @@
       "local": {
         "label": "ローカル",
         "freeBadge": "無料",
-        "description": "ローカルのメモに直接アクセスできます。ログインや API キーは不要 — OpenWhispr の起動中に利用できます。"
+        "description": "ローカルのメモに直接アクセスできます。ログインや API キーは不要 — Writely の起動中に利用できます。"
       },
       "cloud": {
         "label": "クラウド",
@@ -3549,8 +3549,8 @@
       "upgrade": "アップグレード"
     },
     "notABot": {
-      "title": "OpenWhispr はミーティング録音ツールであり、ボットではありません",
-      "description": "OpenWhispr はシステムから直接オーディオをキャプチャします — 参加者としてミーティングに参加することはありません。カレンダーを接続して、通常通りノートを取るだけです。"
+      "title": "Writely はミーティング録音ツールであり、ボットではありません",
+      "description": "Writely はシステムから直接オーディオをキャプチャします — 参加者としてミーティングに参加することはありません。カレンダーを接続して、通常通りノートを取るだけです。"
     }
   },
   "calendar": {
@@ -3591,7 +3591,7 @@
     "systemAudioRequired": "他の参加者の音声を録音するには、システムオーディオの権限が必要です。",
     "openSettings": "システム設定を開く",
     "connectCalendar": "カレンダーを接続",
-    "connectCalendarDescription": "OpenWhispr を離れずに会議を確認して参加できます。",
+    "connectCalendarDescription": "Writely を離れずに会議を確認して参加できます。",
     "connectCalendarButton": "カレンダーを接続"
   },
   "notesView": {
@@ -3640,7 +3640,7 @@
         "invitationActions": "招待の操作",
         "resendSent": "招待を送信しました",
         "resendThrottled": "招待を送信したばかりです。1分ほど待ってからお試しください。",
-        "syncPrompt": "共有すると、このノートのコピーが OpenWhispr クラウドに保存されます。共有相手を選ぶまでは、あなた以外は閲覧できません。",
+        "syncPrompt": "共有すると、このノートのコピーが Writely クラウドに保存されます。共有相手を選ぶまでは、あなた以外は閲覧できません。",
         "syncAndShare": "ノートを同期",
         "visibility": {
           "label": "公開範囲",
@@ -3685,13 +3685,13 @@
     }
   },
   "updateNotification": {
-    "title": "OpenWhispr のアップデートあり",
+    "title": "Writely のアップデートあり",
     "body": "バージョン {{version}} がダウンロード可能です",
     "cta": "今すぐ更新"
   },
   "permissionsGate": {
     "title": "権限が必要です",
-    "description": "OpenWhispr がこのコンピュータで動作するために、いくつかの権限が必要です。",
+    "description": "Writely がこのコンピュータで動作するために、いくつかの権限が必要です。",
     "continue": "続行"
   },
   "apiKeysSection": {
@@ -3814,7 +3814,7 @@
     },
     "join": {
       "title": "チームに参加",
-      "domainTitle": "あなたのチームはすでに OpenWhispr にいます",
+      "domainTitle": "あなたのチームはすでに Writely にいます",
       "description": "これらのワークスペースに、あなたと同じメールドメインのメンバーがいます。",
       "invitedDescription": "ワークスペースに招待されています。",
       "invitedBy": "{{inviter}} が {{role}} として招待しました",

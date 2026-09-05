@@ -39,6 +39,7 @@ import { NoteSharingService } from "../../services/NoteSharingService";
 import { fetchSpaceRoster } from "../../hooks/useSpaceRoster";
 import { useAuth } from "../../hooks/useAuth";
 import { RichTextEditor } from "../ui/RichTextEditor";
+import type { ProofreadItem } from "../ui/RichTextEditorProofread";
 import type { Editor } from "@tiptap/react";
 import { MeetingTranscriptChat, SelectionBar } from "./MeetingTranscriptChat";
 import {
@@ -374,6 +375,7 @@ export default function NoteEditor({
     Array<{ id: number; display_name: string; email: string | null }>
   >([]);
   const editorRef = useRef<Editor | null>(null);
+  const [proofreadIssues, setProofreadIssues] = useState<ProofreadItem[]>([]);
 
   const embeddedChat = useEmbeddedChat({
     noteId: note.id,
@@ -1094,19 +1096,45 @@ export default function NoteEditor({
                 </button>
               )}
               {canEditNote && (
-                <button
-                  onClick={() => void handlePolishNote()}
-                  disabled={polishBusy || !note.content.trim()}
-                  className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md bg-foreground/4 dark:bg-white/5 text-foreground/50 dark:text-foreground/40 hover:text-foreground/70 hover:bg-foreground/8 dark:hover:text-foreground/60 dark:hover:bg-white/8 transition-colors duration-150 disabled:opacity-40"
-                  aria-label={t("noteEditor.polish.button")}
-                  title={t("noteEditor.polish.button")}
-                >
-                  {polishBusy ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={11} />
-                  )}
-                </button>
+                <>
+                  {proofreadIssues.length > 0 ? (
+                    <button
+                      onClick={() => {
+                        editorRef.current?.commands.applyAllProofreadSuggestions();
+                      }}
+                      className="shrink-0 h-6 px-2 flex items-center gap-1.5 rounded-md bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-medium transition-colors"
+                      title="Fix all suggestions"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span>
+                        {proofreadIssues.length} issue{proofreadIssues.length > 1 ? "s" : ""}
+                      </span>
+                      <span className="opacity-60 text-[10px] ml-0.5">· Fix all</span>
+                    </button>
+                  ) : note.content.trim() ? (
+                    <div
+                      className="shrink-0 h-6 px-1.5 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 opacity-80"
+                      title="All grammar and spelling checks clear"
+                    >
+                      <Check size={12} />
+                      <span className="text-[10px] font-medium hidden sm:inline">Clean</span>
+                    </div>
+                  ) : null}
+
+                  <button
+                    onClick={() => void handlePolishNote()}
+                    disabled={polishBusy || !note.content.trim()}
+                    className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md bg-foreground/4 dark:bg-white/5 text-foreground/50 dark:text-foreground/40 hover:text-foreground/70 hover:bg-foreground/8 dark:hover:text-foreground/60 dark:hover:bg-white/8 transition-colors duration-150 disabled:opacity-40"
+                    aria-label={t("noteEditor.polish.button")}
+                    title={t("noteEditor.polish.button")}
+                  >
+                    {polishBusy ? (
+                      <Loader2 size={11} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={11} />
+                    )}
+                  </button>
+                </>
               )}
               {(onExportNote || onExportTranscript) && (
                 <DropdownMenu>
@@ -1259,6 +1287,7 @@ export default function NoteEditor({
                 onChange={handleEnhancedChange}
                 disabled={!canEditNote}
                 mentionPeople={mentionPeople}
+                onIssuesChange={setProofreadIssues}
               />
             ) : (
               <RichTextEditor
@@ -1268,6 +1297,7 @@ export default function NoteEditor({
                 placeholder={t("notes.editor.startWriting")}
                 disabled={!canEditNote || actionProcessingState === "processing"}
                 mentionPeople={mentionPeople}
+                onIssuesChange={setProofreadIssues}
               />
             )}
           </div>

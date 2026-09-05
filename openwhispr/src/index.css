@@ -1768,3 +1768,54 @@ a:hover {
 .dark .rich-text-editor-content p.is-editor-empty:first-child::before {
   color: oklch(0.7 0 0 / 0.2);
 }
+
+/* ── Writely Inline Proofreading Decorations (Grammarly-style) ── */
+
+.writely-issue {
+  cursor: pointer;
+  border-radius: 2px;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 4px !important;
+  transition: background-color 0.15s ease;
+}
+
+.writely-issue-grammar {
+  text-decoration: underline solid #ef4444 2px !important;
+  text-decoration-color: #ef4444 !important;
+}
+
+.writely-issue-grammar:hover,
+.writely-issue-grammar.active {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+.writely-issue-spelling {
+  text-decoration: underline solid #d97706 2px !important;
+  text-decoration-color: #d97706 !important;
+}
+
+.writely-issue-spelling:hover,
+.writely-issue-spelling.active {
+  background-color: rgba(217, 119, 6, 0.12);
+}
+
+.writely-issue-clarity {
+  text-decoration: underline solid #7c3aed 2px !important;
+  text-decoration-color: #7c3aed !important;
+}
+
+.writely-issue-clarity:hover,
+.writely-issue-clarity.active {
+  background-color: rgba(124, 58, 237, 0.12);
+}
+
+.writely-issue-tone {
+  text-decoration: underline solid #059669 2px !important;
+  text-decoration-color: #059669 !important;
+}
+
+.writely-issue-tone:hover,
+.writely-issue-tone.active {
+  background-color: rgba(5, 150, 105, 0.12);
+}
+

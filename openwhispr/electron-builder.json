@@ -3,8 +3,9 @@
   "afterPack": "scripts/afterPack.js",
   "productName": "Writely",
   "protocols": {
-    "name": "OpenWhispr Protocol",
+    "name": "Writely Protocol",
     "schemes": [
+      "writely",
       "openwhispr"
     ]
   },

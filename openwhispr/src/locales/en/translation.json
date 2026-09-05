@@ -244,7 +244,7 @@
         "titleLineOne": "Try your",
         "titleLineTwo": "first dictation",
         "description": "Press {{hotkey}} and start speaking. Writely will turn your voice into text.",
-        "founder": "Hi, I am Gabe, Founder of OpenWhispr",
+        "founder": "Hi, I am Gabe, Founder of Writely",
         "prompt": "Try saying: “I’m testing dictation for the first time.”",
         "placeholder": "Your dictation will appear here…"
       },
