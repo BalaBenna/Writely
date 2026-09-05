@@ -98,6 +98,12 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [assistantHotkey, setAssistantHotkey] = useState(
     () => parseHotkeyList(settings.voiceAgentKey)[0] || "CommandOrControl+Shift+Space"
   );
+  // Writely fix-anywhere hotkey: optional second capture on the dictation step.
+  // Never gates the step — dictation confirmation alone advances.
+  const [proofreadHotkey, setProofreadHotkey] = useState(
+    () => parseHotkeyList(settings.proofreadKey)[0] || "CommandOrControl+Shift+G"
+  );
+  const [proofreadHotkeyConfirmed, setProofreadHotkeyConfirmed] = useState(false);
   const [dictationHotkeyConfirmed, setDictationHotkeyConfirmed] = useState(false);
   const [assistantHotkeyConfirmed, setAssistantHotkeyConfirmed] = useState(false);
   // Seeded from main rather than getDefaultHotkey(): main already knows when the
@@ -354,6 +360,28 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         serializeHotkeyList([value, ...parseHotkeyList(settings.voiceAgentKey).slice(1)])
       );
       return registered ? null : t("onboarding.rehaul.hotkey.inUse");
+    },
+    [settings, t]
+  );
+
+  const validateProofreadHotkey = useCallback(
+    (value: string) =>
+      validateHotkeyForSlot(
+        value,
+        { "settingsPage.general.hotkey.title": dictationHotkey },
+        t
+      ),
+    [dictationHotkey, t]
+  );
+
+  const confirmProofreadHotkey = useCallback(
+    async (value: string) => {
+      const res = await window.electronAPI?.registerProofreadHotkey?.(value);
+      if (res?.success) {
+        settings.setProofreadKey(value);
+        return null;
+      }
+      return t("onboarding.rehaul.hotkey.inUse");
     },
     [settings, t]
   );
@@ -800,6 +828,31 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               dense={assistant}
               showCandidateActions={!assistant}
             />
+            {!assistant && (
+              <div className="mt-4 border-t border-[var(--onboarding-control-border)] pt-4">
+                <p className="mb-1 text-center text-sm font-medium text-[var(--onboarding-text-primary)]">
+                  {t("onboarding.rehaul.proofreadHotkey.title")}
+                </p>
+                <p className="mb-3 text-center text-xs text-[var(--onboarding-text-secondary)]">
+                  {t("onboarding.rehaul.proofreadHotkey.description")}
+                </p>
+                <ShortcutSetupStep
+                  value={proofreadHotkeyConfirmed ? proofreadHotkey : ""}
+                  onChange={(value) => {
+                    setProofreadHotkey(value);
+                    setProofreadHotkeyConfirmed(true);
+                  }}
+                  onClearSelection={() => setProofreadHotkeyConfirmed(false)}
+                  recommended="CommandOrControl+Shift+G"
+                  captureLabel={t("onboarding.rehaul.hotkey.capture")}
+                  recommendedLabel={t("common.recommended")}
+                  chooseAnotherLabel={t("onboarding.rehaul.hotkey.chooseAnother")}
+                  validate={validateProofreadHotkey}
+                  onConfirm={confirmProofreadHotkey}
+                  dense
+                />
+              </div>
+            )}
           </div>
         );
       }

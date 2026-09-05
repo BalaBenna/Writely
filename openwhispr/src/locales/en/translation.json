@@ -418,6 +418,10 @@
         "downloads": "Model downloads",
         "downloading": "Downloading… {{progress}}%",
         "installing": "Installing model…"
+      },
+      "proofreadHotkey": {
+        "title": "Also fix writing anywhere",
+        "description": "Press this hotkey on selected text in any app to pop the Writely proofreading card. Optional - you can set it later in Settings."
       }
     },
     "steps": {
@@ -2353,6 +2357,10 @@
       "translationHotkey": {
         "title": "Translation Hotkey",
         "description": "Dictate in any language — the pasted text comes out translated"
+      },
+      "proofreadHotkey": {
+        "title": "Fix-Anywhere Hotkey",
+        "description": "Capture the selected text in any app and pop the Writely proofreading card next to your cursor"
       }
     },
     "permissions": {

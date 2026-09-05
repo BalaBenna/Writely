@@ -1098,6 +1098,8 @@ export default function SettingsPage({
     setDictationKey,
     meetingKey,
     setMeetingKey,
+    proofreadKey,
+    setProofreadKey,
     meetingHotkeyLayoutMode,
     setMeetingHotkeyLayoutMode,
     autoLearnCorrections,
@@ -1382,6 +1384,22 @@ export default function SettingsPage({
       registerFn: meetingRegisterFn,
     });
 
+  const proofreadRegisterFn = useCallback(async (hotkey: string) => {
+    const result = await window.electronAPI?.registerProofreadHotkey?.(hotkey);
+    return result ?? { success: false };
+  }, []);
+
+  const { registerHotkey: registerProofreadHotkey, isRegistering: isProofreadHotkeyRegistering } =
+    useHotkeyRegistration({
+      onSuccess: (registeredHotkey) => {
+        setProofreadKey(registeredHotkey);
+      },
+      showSuccessToast: false,
+      showErrorToast: true,
+      showAlert: showAlertDialog,
+      registerFn: proofreadRegisterFn,
+    });
+
   // Agent hotkey setters resolve to false when main-process registration fails;
   // surface it and return the result so HotkeyListInput rolls the row back.
   const [isAgentHotkeyCommitting, setIsAgentHotkeyCommitting] = useState(false);
@@ -1412,10 +1430,11 @@ export default function SettingsPage({
           "settingsPage.general.meetingHotkey.title": meetingKey,
           "settingsPage.general.voiceAgentHotkey.title": voiceAgentKey,
           "settingsPage.general.translationHotkey.title": translationKey,
+          "settingsPage.general.proofreadHotkey.title": proofreadKey,
         },
         t
       ),
-    [meetingKey, voiceAgentKey, translationKey, t]
+    [meetingKey, voiceAgentKey, translationKey, proofreadKey, t]
   );
 
   const validateMeetingHotkey = useCallback(
@@ -1426,10 +1445,11 @@ export default function SettingsPage({
           "settingsPage.general.hotkey.title": dictationKey,
           "settingsPage.general.voiceAgentHotkey.title": voiceAgentKey,
           "settingsPage.general.translationHotkey.title": translationKey,
+          "settingsPage.general.proofreadHotkey.title": proofreadKey,
         },
         t
       ),
-    [dictationKey, voiceAgentKey, translationKey, t]
+    [dictationKey, voiceAgentKey, translationKey, proofreadKey, t]
   );
 
   const validateVoiceAgentHotkey = useCallback(
@@ -1440,10 +1460,11 @@ export default function SettingsPage({
           "settingsPage.general.hotkey.title": dictationKey,
           "settingsPage.general.meetingHotkey.title": meetingKey,
           "settingsPage.general.translationHotkey.title": translationKey,
+          "settingsPage.general.proofreadHotkey.title": proofreadKey,
         },
         t
       ),
-    [dictationKey, meetingKey, translationKey, t]
+    [dictationKey, meetingKey, translationKey, proofreadKey, t]
   );
 
   const validateTranslationHotkey = useCallback(
@@ -1458,6 +1479,21 @@ export default function SettingsPage({
         t
       ),
     [dictationKey, meetingKey, voiceAgentKey, t]
+  );
+
+  const validateProofreadHotkey = useCallback(
+    (hotkey: string) =>
+      validateHotkeyForSlot(
+        hotkey,
+        {
+          "settingsPage.general.hotkey.title": dictationKey,
+          "settingsPage.general.meetingHotkey.title": meetingKey,
+          "settingsPage.general.voiceAgentHotkey.title": voiceAgentKey,
+          "settingsPage.general.translationHotkey.title": translationKey,
+        },
+        t
+      ),
+    [dictationKey, meetingKey, voiceAgentKey, translationKey, t]
   );
 
   const {
@@ -3904,6 +3940,29 @@ EOF`,
                     onClear={() => commitAgentHotkey(setTranslationKey, "")}
                     validate={validateTranslationHotkey}
                     disabled={isAgentHotkeyCommitting}
+                    maxHotkeys={isUsingNativeShortcut ? 1 : undefined}
+                  />
+                </SettingsPanelRow>
+              </SettingsPanel>
+            </div>
+
+            {/* Fix-Anywhere (Proofread) Hotkey */}
+            <div>
+              <SectionHeader
+                title={t("settingsPage.general.proofreadHotkey.title")}
+                description={t("settingsPage.general.proofreadHotkey.description")}
+              />
+              <SettingsPanel>
+                <SettingsPanelRow>
+                  <HotkeyListInput
+                    value={proofreadKey}
+                    onChange={(list) => registerProofreadHotkey(list)}
+                    onClear={async () => {
+                      await window.electronAPI?.registerProofreadHotkey?.("");
+                      setProofreadKey("");
+                    }}
+                    validate={validateProofreadHotkey}
+                    disabled={isProofreadHotkeyRegistering}
                     maxHotkeys={isUsingNativeShortcut ? 1 : undefined}
                   />
                 </SettingsPanelRow>

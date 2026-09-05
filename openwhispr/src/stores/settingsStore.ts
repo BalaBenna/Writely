@@ -920,6 +920,7 @@ export interface SettingsState
 
   setDictationKey: (key: string) => void;
   setMeetingKey: (key: string) => void;
+  setProofreadKey: (key: string) => void;
   setVoiceAgentKey: (key: string) => Promise<boolean>;
   translationKey: string;
   setTranslationKey: (key: string) => Promise<boolean>;
@@ -1331,6 +1332,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   dictationKey: readString("dictationKey", ""),
   activeDictationKey: null,
   meetingKey: readString("meetingKey", ""),
+  proofreadKey: readString("proofreadKey", "CommandOrControl+Shift+G"),
   voiceAgentKey: readString("voiceAgentKey", ""),
   translationKey: readString("translationKey", ""),
   onboardingUseCases: readStringArray("onboardingUseCases", []),
@@ -2046,6 +2048,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   setMeetingKey: (key: string) => {
     if (isBrowser) localStorage.setItem("meetingKey", key);
     set({ meetingKey: key });
+  },
+  setProofreadKey: (key: string) => {
+    if (isBrowser) localStorage.setItem("proofreadKey", key);
+    set({ proofreadKey: key });
   },
   setVoiceAgentKey: createRegisteredHotkeySetter(
     "voiceAgentKey",
