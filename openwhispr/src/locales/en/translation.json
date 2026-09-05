@@ -2581,6 +2581,18 @@
       "upgradeCta": "Upgrade now",
       "upgradedTitle": "Upgraded to Enterprise",
       "upgradedDescription": "{{workspace}} is now on Enterprise."
+    },
+    "writing": {
+      "title": "Writing Assistant",
+      "description": "Engine used by Fix-Anywhere rewrite, translate and cloud polish. Keys are stored in your OS keychain, never on disk.",
+      "provider": "Provider",
+      "model": "Model",
+      "apiKey": "{{provider}} API key",
+      "getKey": "Get key",
+      "save": "Save",
+      "saved": "Saved",
+      "keySaved": "Key saved",
+      "keychainNote": "Saved keys go to the OS keychain via the secure store. The popup falls back to the offline engine when no key is set."
     }
   },
   "models": {

@@ -70,6 +70,7 @@ import { useUpdater } from "../hooks/useUpdater";
 
 import PromptStudio from "./ui/PromptStudio";
 import { ProviderTabs } from "./ui/ProviderTabs";
+import { WritingProviderSection } from "./WritingProviderSection";
 import { HotkeyListInput } from "./ui/HotkeyListInput";
 import { useHotkeyRegistration } from "../hooks/useHotkeyRegistration";
 import { useHotkeyModeInfo } from "../hooks/useHotkeyModeInfo";
@@ -3967,6 +3968,11 @@ EOF`,
                   />
                 </SettingsPanelRow>
               </SettingsPanel>
+            </div>
+
+            {/* Writing-assistant provider (Writely engine selection + BYOK key) */}
+            <div>
+              <WritingProviderSection />
             </div>
 
             {/* Meeting Mode Hotkey */}
