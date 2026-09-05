@@ -10,7 +10,10 @@ import claudeIcon from "../assets/icons/providers/claude.svg";
 import openaiIcon from "../assets/icons/providers/openai.svg";
 import cursorIcon from "../assets/icons/providers/cursor.svg";
 
-const MCP_URL = "https://mcp.openwhispr.com/mcp";
+// Public MCP endpoint. Override with VITE_WRITELY_MCP_URL once a Writely
+// domain fronts the MCP backend - until then the working endpoint stays.
+const MCP_URL =
+  (import.meta as any).env?.VITE_WRITELY_MCP_URL || "https://mcp.openwhispr.com/mcp";
 const MCP_DOCS_URL = "https://docs.openwhispr.com/integrations/mcp";
 
 interface McpIntegrationCardProps {
@@ -37,7 +40,7 @@ export default function McpIntegrationCard({ isPaid, onUpgrade }: McpIntegration
   return (
     <div className="rounded-lg border border-border/50 dark:border-border-subtle/70 bg-card/50 dark:bg-surface-2/50 backdrop-blur-sm p-4">
       <div className="flex items-center gap-2 mb-4">
-        <LogoTile src={logo} alt="OpenWhispr" />
+        <LogoTile src={logo} alt="Writely" />
         <Plus className="h-3 w-3 text-muted-foreground/40 shrink-0" />
         <div className="flex items-center gap-1">
           <LogoTile src={claudeIcon} alt="Claude" monochrome />
