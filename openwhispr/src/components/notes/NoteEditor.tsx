@@ -270,6 +270,25 @@ export default function NoteEditor({
     (!note.cloud_id || isTeamNote || aclState === "loaded") &&
     shareCapabilities.canShare;
   const canEditNote = shareCapabilities.canEdit;
+  // Writely polish: grammar + clarity pass over the note body via the
+  // writing engine (cloud when a provider key is set, offline otherwise).
+  const [polishBusy, setPolishBusy] = useState(false);
+  const handlePolishNote = useCallback(async () => {
+    if (polishBusy || !canEditNote || !note.content.trim()) return;
+    setPolishBusy(true);
+    try {
+      const { correctWriting } = await import("../../services/WritingAssistService");
+      const r = await correctWriting(note.content);
+      if (r.corrected && r.corrected !== note.content) {
+        onCancelPendingSaves?.(note.id);
+        onContentChange(note.id, r.corrected);
+      }
+    } catch {
+      // Offline engine rarely throws; cloud errors fail silent here.
+    } finally {
+      setPolishBusy(false);
+    }
+  }, [polishBusy, canEditNote, note, onContentChange, onCancelPendingSaves]);
   // Re-filing is owner-only on shared personal notes (a denied folder_id
   // PATCH would fork an unexpected Personal copy); team members keep
   // same-space folder moves.
@@ -1072,6 +1091,21 @@ export default function NoteEditor({
                         : "text-foreground/50 dark:text-foreground/40"
                     )}
                   />
+                </button>
+              )}
+              {canEditNote && (
+                <button
+                  onClick={() => void handlePolishNote()}
+                  disabled={polishBusy || !note.content.trim()}
+                  className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md bg-foreground/4 dark:bg-white/5 text-foreground/50 dark:text-foreground/40 hover:text-foreground/70 hover:bg-foreground/8 dark:hover:text-foreground/60 dark:hover:bg-white/8 transition-colors duration-150 disabled:opacity-40"
+                  aria-label={t("noteEditor.polish.button")}
+                  title={t("noteEditor.polish.button")}
+                >
+                  {polishBusy ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={11} />
+                  )}
                 </button>
               )}
               {(onExportNote || onExportTranscript) && (

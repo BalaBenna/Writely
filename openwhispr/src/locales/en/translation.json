@@ -3807,6 +3807,9 @@
           "retry": "Retry"
         }
       }
+    },
+    "polish": {
+      "button": "Polish with Writely (grammar + clarity)"
     }
   },
   "commandSearch": {
