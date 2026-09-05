@@ -250,9 +250,15 @@ export const usePolicyStore = create<PolicyState>()((set, get) => {
             current.accountId === accountId &&
             shouldPreserveResolvedPolicyOnFailure(current.status, failureCode)
           )) {
+            // No settled managed policy to preserve (fresh personal/offline
+            // run, or backend unreachable): resolve UNMANAGED, not "error".
+            // "error" fails every policy gate (setup choice, hotkeys, modes),
+            // bricking onboarding for personal users whenever the backend is
+            // unreachable. Managed devices keep their last-seen policy via the
+            // preservation branch above, so org enforcement is unaffected.
             set({
               accountId,
-              status: "error",
+              status: "unmanaged",
               managed: false,
               policy: null,
               appVersion,
